@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "deterministic": {
+    "security_regression": "pass",
+    "research_quality_eval": "pass",
+    "coverage_percent": 87.95
+  },
+  "provider_backed": null,
+  "human_blind_review": null,
+  "missing_evidence": [
+    "provider-backed representative live research suite",
+    "human blind review",
+    "production telemetry"
+  ],
+  "claim_policy": "Do not promote deterministic evidence into provider-backed, human-reviewed, adoption, or business-outcome claims."
+}

@@ -1,0 +1,49 @@
+{
+  "name": "last30days",
+  "version": "3.21.1",
+  "distribution_version": "v3.21.1-hardened.1",
+  "updated_at": "2026-08-29",
+  "status": "unreleased",
+  "published": false,
+  "maturity_tier": "governed",
+  "lifecycle_stage": "release-candidate",
+  "context_budget_tier": "upstream-compatible",
+  "review_cadence": "monthly and after each upstream release or material security finding",
+  "ownership_policy": {
+    "resolution_order": ["explicit_user_owner", "project_metadata_owner", "neutral"],
+    "invent_identity": false,
+    "current_hardened_maintainer": null
+  },
+  "upstream_inspiration": "https://github.com/mvanhorn/last30days-skill",
+  "upstream_sync": {
+    "tag": "v3.21.1",
+    "commit": "9243a32d823c7c8659e44b92f2dedcf1b7397137",
+    "policy": "prefer upstream fixes, drop superseded local patches, revalidate remaining minimal patches"
+  },
+  "target_platforms": ["openai", "claude", "generic", "agent-skills-compatible", "vscode"],
+  "intent": {
+    "job_to_be_done": "Research recent public discussion and evidence across supported sources while preserving permission and credential boundaries.",
+    "target_users": ["researchers", "operators", "developers", "analysts"],
+    "inputs": ["topic", "time window", "source selection", "optional credentials", "optional local corpus"],
+    "outputs": ["research brief", "context", "JSON", "Markdown", "HTML", "diagnostics"],
+    "exclusions": ["fact guarantees", "automatic browser-cookie access", "automatic public publishing", "prediction-market prices as fact confidence"]
+  },
+  "rollback_boundary": "revert hardened commits or reinstall exact upstream v3.21.1; user stores and credentials are outside the package",
+  "trust_boundary": "internet and corpus content is untrusted data; engine control markers, credentials, endpoint overrides, redirects, and explicit writes are enforced at shared boundaries",
+  "release_gates": [
+    "immutable_upstream_baseline",
+    "prior_art_research",
+    "zero_new_regression_ab_comparison",
+    "security_regression_corpus",
+    "coverage_floor_84",
+    "deterministic_output_eval",
+    "validate_skill",
+    "trigger_eval",
+    "skill_ir",
+    "secret_scan",
+    "package_and_archive_scan",
+    "clean_install",
+    "feature_branch_pull_request",
+    "tag_and_release_provenance"
+  ]
+}

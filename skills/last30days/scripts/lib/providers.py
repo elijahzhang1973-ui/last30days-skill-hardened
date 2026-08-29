@@ -7,6 +7,7 @@ import os
 import re
 import sys
 from typing import Any
+from urllib.parse import urlsplit
 
 from . import env, http, schema
 
@@ -24,6 +25,55 @@ OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 # constant is suffix-free. If GEMINI_FLASH_LITE moves to a non-preview stable ID,
 # double-check that OpenRouter's slug still maps to the same upstream model.
 OPENROUTER_DEFAULT = "google/gemini-3.1-flash-lite-preview"
+
+PROVIDER_ENDPOINT_OVERRIDE_KEYS = frozenset(
+    {"OPENAI_BASE_URL", "XAI_BASE_URL", "OPENROUTER_BASE_URL"}
+)
+
+
+def _is_loopback_hostname(hostname: str) -> bool:
+    """Return whether a parsed hostname is an explicit IP/localhost loopback."""
+    normalized = hostname.rstrip(".").casefold()
+    if normalized == "localhost" or normalized == "::1":
+        return True
+    if normalized.startswith("127."):
+        try:
+            return all(0 <= int(part) <= 255 for part in normalized.split("."))
+        except ValueError:
+            return False
+    return False
+
+
+def provider_endpoint_override_allowed(raw: object) -> bool:
+    """Apply the credential-bearing provider endpoint transport policy."""
+    value = str(raw or "").strip()
+    if not value:
+        return False
+    try:
+        parts = urlsplit(value)
+        # Force validation of malformed ports while the raw value is still local.
+        _ = parts.port
+    except ValueError:
+        return False
+    if not parts.hostname or parts.username is not None or parts.password is not None:
+        return False
+    if parts.scheme.casefold() == "https":
+        return True
+    return parts.scheme.casefold() == "http" and _is_loopback_hostname(parts.hostname)
+
+
+def base_url_override(key: str, default: str, *, warn: bool = True) -> str:
+    """Resolve a provider override without ever logging its raw secret-bearing value."""
+    raw = os.environ.get(key)
+    if not raw:
+        return default
+    if provider_endpoint_override_allowed(raw):
+        return raw.strip()
+    if warn:
+        sys.stderr.write(
+            f"[last30days] WARNING: unsafe endpoint rejected for {key}; using provider default\n"
+        )
+    return default
 
 
 class ReasoningClient:
@@ -119,7 +169,7 @@ class OpenAIClient(ReasoningClient):
             "temperature": 0,
         }
         response = http.post(
-            os.environ.get("OPENAI_BASE_URL", OPENAI_RESPONSES_URL),
+            base_url_override("OPENAI_BASE_URL", OPENAI_RESPONSES_URL),
             payload,
             headers={
                 "Authorization": f"Bearer {self.token}",
@@ -150,7 +200,7 @@ class XAIClient(ReasoningClient):
             "input": [{"role": "user", "content": prompt}],
         }
         response = http.post(
-            os.environ.get("XAI_BASE_URL", XAI_RESPONSES_URL),
+            base_url_override("XAI_BASE_URL", XAI_RESPONSES_URL),
             payload,
             headers={
                 "Authorization": f"Bearer {self.api_key}",
@@ -182,7 +232,7 @@ class OpenRouterClient(ReasoningClient):
             "temperature": 0,
         }
         response = http.post(
-            os.environ.get("OPENROUTER_BASE_URL", OPENROUTER_URL),
+            base_url_override("OPENROUTER_BASE_URL", OPENROUTER_URL),
             payload,
             headers={
                 "Authorization": f"Bearer {self.api_key}",

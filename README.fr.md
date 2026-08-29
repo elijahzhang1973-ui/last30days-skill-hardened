@@ -2,6 +2,8 @@
 
 [English](README.md) | Français | [Deutsch](README.de.md) | [Español](README.es.md) | [Português (Brasil)](README.pt-BR.md) | [日本語](README.ja.md) | [简体中文](README.zh-CN.md)
 
+> **Distribution renforcée non officielle.** Basée sur [`mvanhorn/last30days-skill` v3.21.1](https://github.com/mvanhorn/last30days-skill/releases/tag/v3.21.1). Il ne s'agit pas d'une version officielle de mvanhorn ; le copyright et la licence MIT d'origine sont conservés.
+
 <p align="center">
   <img src="media/pr-assets/last30days-ad.gif" width="720" alt="last30days - an AI agent-led search engine that searches people, not editors" />
 </p>
@@ -38,7 +40,7 @@ Zéro configuration. Reddit, HN, Polymarket et GitHub fonctionnent immédiatemen
 
 ---
 
-Les upvotes de Reddit. Les likes de X. Les transcriptions YouTube. L'engagement TikTok. Les cotes Polymarket, adossées à de l'argent réel et à des informations d'initiés. Ce sont des millions de personnes qui votent chaque jour avec leur attention et leur portefeuille. /last30days interroge tout cela en parallèle, classe les résultats selon ce avec quoi les gens interagissent vraiment, et un agent IA joue le rôle de juge pour en tirer un seul brief.
+Les upvotes de Reddit. Les likes de X. Les transcriptions YouTube. L'engagement TikTok. Les prix Polymarket comme signal des attentes des traders. Des millions de personnes émettent chaque jour des signaux par leur attention et leur portefeuille. /last30days interroge tout cela en parallèle et en tire un seul brief.
 
 Google agrège des rédactions. /last30days interroge les gens.
 
@@ -70,7 +72,7 @@ Si vous rencontrez un PDG, avez-vous lu tous ses tweets et toutes ses transcript
 | **TikTok** | Le créateur qui touche 3,6 millions de personnes avec un angle que vous ne trouverez jamais sur Google. |
 | **Instagram Reels** | Le regard des influenceurs, avec la transcription de ce qui est dit. Le signal de la culture visuelle. |
 | **Hacker News** | Le consensus des développeurs. 825 points, 899 commentaires. Là où les gens techniques débattent vraiment. |
-| **Polymarket** | Pas des opinions. Des cotes. Adossées à de l'argent réel. 96 % de probabilité sur des ventes d'album. 4 % sur une acquisition. |
+| **Polymarket** | Probabilités implicites et mouvements du marché : attentes des traders, pas confiance factuelle. |
 | **GitHub** | Pour les personnes : rythme des PR, meilleurs dépôts par étoiles, notes de version. Pour les sujets : issues et discussions. |
 | **Digg** | Des groupes d'articles sélectionnés depuis le classement AI 1000 de Digg (environ 1000 comptes IA à fort signal sur X), avec des citations attribuables intégrées (sans authentification X). Activé automatiquement quand `digg-pp-cli` est présent dans le PATH. |
 | **arXiv** | Les articles scientifiques derrière le battage médiatique. La recherche publiée dans la fenêtre, gratuit, sans clé API. Activé automatiquement quand `arxiv-pp-cli` est présent dans le PATH (la configuration initiale l'installe). |
@@ -86,7 +88,7 @@ Si vous rencontrez un PDG, avez-vous lu tous ses tweets et toutes ses transcript
 
 La communauté en ajoute sans cesse. Truth Social et d'autres sources de niche sont déjà dans le moteur, et d'autres arrivent.
 
-Un fil Reddit à 1 500 upvotes est un signal plus fort qu'un billet de blog que personne n'a lu. Un TikTok à 3,6 millions de vues en dit plus sur ce qui compte culturellement qu'un communiqué de presse. Des cotes Polymarket adossées à 66 000 $ de volume sont plus difficiles à contester que l'intuition d'un éditorialiste.
+Un fil Reddit à 1 500 upvotes est un signal plus fort qu'un billet de blog que personne n'a lu. Un TikTok à 3,6 millions de vues en dit plus sur ce qui compte culturellement qu'un communiqué de presse. Polymarket apporte une vue distincte des attentes actuelles des traders, sous réserve de la qualité du marché et des règles de résolution.
 
 La synthèse classe selon ce avec quoi de vraies personnes ont vraiment interagi. La pertinence sociale, pas la pertinence SEO.
 

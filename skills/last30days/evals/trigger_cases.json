@@ -1,0 +1,29 @@
+{
+  "recommended_threshold": 0.4,
+  "description_required_concepts": ["recent_research", "sources", "health"],
+  "positive_concepts": {
+    "recent_research": ["last 30 days", "recent", "latest", "最近30天", "最近一个月", "近期", "最新"],
+    "sources": ["reddit", "x", "youtube", "github", "polymarket", "web", "community", "社区", "网络", "数据源"],
+    "synthesis": ["research", "compare", "synthesize", "brief", "研究", "比较", "综合", "简报", "评价"],
+    "health": ["doctor", "health check", "diagnose", "preflight", "诊断", "权限检查"],
+    "identity": ["last30days", "last 30 days"]
+  },
+  "negative_patterns": ["不要查网络", "禁止联网", "timeless definition only", "只翻译", "只改代码"],
+  "should_trigger": [
+    {"text": "用 last30days 研究最近30天大家如何评价这个产品", "family": "explicit_cn"},
+    {"text": "Research the latest community discussion across Reddit, X, YouTube, and the web", "family": "recent_sources_en"},
+    {"text": "比较两个数据库最近一个月的社区反馈并综合成简报", "family": "comparison_cn"},
+    {"text": "Run the last30days doctor health check and preflight", "family": "diagnostic_en"},
+    {"text": "检查最近一个月这个 GitHub 项目的发布和开发者讨论", "family": "github_cn"}
+  ],
+  "should_not_trigger": [
+    {"text": "把这段英文只翻译成中文", "family": "translation"},
+    {"text": "解释牛顿第二定律，timeless definition only", "family": "timeless"},
+    {"text": "给这个 Python 函数只改代码，不要查网络", "family": "code_edit"}
+  ],
+  "near_neighbor": [
+    {"text": "总结我已经贴出的文章，禁止联网", "family": "supplied_summary"},
+    {"text": "帮我写一份不需要近期数据的通用产品介绍", "family": "generic_copy"},
+    {"text": "只查看本地 git diff 并做代码审查", "family": "local_review"}
+  ]
+}
