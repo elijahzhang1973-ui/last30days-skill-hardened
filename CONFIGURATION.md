@@ -375,6 +375,16 @@ An explicit `--register` wins over `LAST30DAYS_REGISTER`; the environment/config
 4. **OpenRouter** - `OPENROUTER_API_KEY` (reasoning provider, auto-resolve, and synchronous Sonar fallback for the Perplexity source)
 5. **Local / deterministic** - always available, lowest quality
 
+### Provider endpoint overrides
+
+`OPENAI_BASE_URL`, `XAI_BASE_URL`, and `OPENROUTER_BASE_URL` redirect requests
+that carry provider credentials. They accept remote `https://` endpoints and
+explicit loopback HTTP endpoints (`localhost`, `127.0.0.0/8`, or `[::1]`).
+Remote cleartext HTTP, unsupported schemes, bare hosts, malformed URLs, and
+userinfo-bearing URLs are rejected; runtime, `preflight`, and diagnostics use
+the same policy. Rejection warnings name only the variable and never print the
+raw URL.
+
 When you invoke `/last30days` from Claude Code, Codex, or Gemini, the host model **is** the reasoning provider for plan + synthesis - you don't need any of the keys above unless you also run the script headlessly (cron, CI, watchlist).
 
 ---

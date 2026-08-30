@@ -1,0 +1,238 @@
+{
+  "schema_version": "3.0.0-neutral",
+  "generated_at": "2026-08-29",
+  "package": {
+    "name": "last30days",
+    "version": "3.21.1",
+    "owner": null,
+    "maturity_tier": "governed",
+    "lifecycle_stage": "release-candidate",
+    "upstream_inspiration": "https://github.com/mvanhorn/last30days-skill",
+    "upstream_sync": {
+      "tag": "v3.21.1",
+      "commit": "9243a32d823c7c8659e44b92f2dedcf1b7397137",
+      "policy": "prefer upstream fixes, drop superseded local patches, revalidate remaining minimal patches"
+    }
+  },
+  "intent": {
+    "description": "Research what people actually say about any topic in the last 30 days. Pulls posts and engagement from Reddit, X, YouTube, TikTok, Hacker News, Polymarket, GitHub, and the web. Includes a doctor health check to diagnose broken or missing sources.",
+    "job_to_be_done": "Research recent public discussion and evidence across supported sources while preserving permission and credential boundaries.",
+    "target_users": [
+      "researchers",
+      "operators",
+      "developers",
+      "analysts"
+    ],
+    "inputs": [
+      "topic",
+      "time window",
+      "source selection",
+      "optional credentials",
+      "optional local corpus"
+    ],
+    "outputs": [
+      "research brief",
+      "context",
+      "JSON",
+      "Markdown",
+      "HTML",
+      "diagnostics"
+    ],
+    "exclusions": [
+      "fact guarantees",
+      "automatic browser-cookie access",
+      "automatic public publishing",
+      "prediction-market prices as fact confidence"
+    ],
+    "ownership_policy": {
+      "resolution_order": [
+        "explicit_user_owner",
+        "project_metadata_owner",
+        "neutral"
+      ],
+      "invent_identity": false,
+      "current_hardened_maintainer": null
+    }
+  },
+  "triggers": {
+    "should_trigger": [
+      "用 last30days 研究最近30天大家如何评价这个产品",
+      "Research the latest community discussion across Reddit, X, YouTube, and the web",
+      "比较两个数据库最近一个月的社区反馈并综合成简报",
+      "Run the last30days doctor health check and preflight",
+      "检查最近一个月这个 GitHub 项目的发布和开发者讨论"
+    ],
+    "should_not_trigger": [
+      "把这段英文只翻译成中文",
+      "解释牛顿第二定律，timeless definition only",
+      "给这个 Python 函数只改代码，不要查网络"
+    ],
+    "near_neighbor": [
+      "总结我已经贴出的文章，禁止联网",
+      "帮我写一份不需要近期数据的通用产品介绍",
+      "只查看本地 git diff 并做代码审查"
+    ]
+  },
+  "workflow": {
+    "router_rules": [],
+    "compact_workflow": [],
+    "critical_invariants": [],
+    "output_contract": []
+  },
+  "resources": {
+    "references": [
+      "references\\save-html-brief.md"
+    ],
+    "scripts": [
+      "scripts\\briefing.py",
+      "scripts\\evaluate_search_quality.py",
+      "scripts\\last30days.py",
+      "scripts\\lib\\__init__.py",
+      "scripts\\lib\\amazon.py",
+      "scripts\\lib\\arxiv.py",
+      "scripts\\lib\\backends.py",
+      "scripts\\lib\\bird_x.py",
+      "scripts\\lib\\bluesky.py",
+      "scripts\\lib\\brightdata.py",
+      "scripts\\lib\\categories.py",
+      "scripts\\lib\\chrome_cookies.py",
+      "scripts\\lib\\cjk.py",
+      "scripts\\lib\\cluster.py",
+      "scripts\\lib\\competitors.py",
+      "scripts\\lib\\cookie_extract.py",
+      "scripts\\lib\\corpus.py",
+      "scripts\\lib\\dates.py",
+      "scripts\\lib\\dedupe.py",
+      "scripts\\lib\\digg.py",
+      "scripts\\lib\\discovery_handoff.py",
+      "scripts\\lib\\doctor.py",
+      "scripts\\lib\\dripstack.py",
+      "scripts\\lib\\entity_extract.py",
+      "scripts\\lib\\env.py",
+      "scripts\\lib\\fanout.py",
+      "scripts\\lib\\feed.py",
+      "scripts\\lib\\freshness.py",
+      "scripts\\lib\\fusion.py",
+      "scripts\\lib\\github.py",
+      "scripts\\lib\\grok_x.py",
+      "scripts\\lib\\grounding.py",
+      "scripts\\lib\\hackernews.py",
+      "scripts\\lib\\health.py",
+      "scripts\\lib\\hiring_signals.py",
+      "scripts\\lib\\hosted.py",
+      "scripts\\lib\\html_publish.py",
+      "scripts\\lib\\html_render.py",
+      "scripts\\lib\\http.py",
+      "scripts\\lib\\instagram.py",
+      "scripts\\lib\\jobs.py",
+      "scripts\\lib\\library.py",
+      "scripts\\lib\\library_index.py",
+      "scripts\\lib\\linkedin.py",
+      "scripts\\lib\\log.py",
+      "scripts\\lib\\normalize.py",
+      "scripts\\lib\\permission_preflight.py",
+      "scripts\\lib\\perplexity.py",
+      "scripts\\lib\\pinterest.py",
+      "scripts\\lib\\pipeline.py",
+      "scripts\\lib\\planner.py",
+      "scripts\\lib\\polymarket.py",
+      "scripts\\lib\\preflight.py",
+      "scripts\\lib\\prescriptions.py",
+      "scripts\\lib\\providers.py",
+      "scripts\\lib\\quality_nudge.py",
+      "scripts\\lib\\query.py",
+      "scripts\\lib\\reddit.py",
+      "scripts\\lib\\reddit_arctic.py",
+      "scripts\\lib\\reddit_enrich.py",
+      "scripts\\lib\\reddit_keyless.py",
+      "scripts\\lib\\reddit_listing.py",
+      "scripts\\lib\\reddit_public.py",
+      "scripts\\lib\\reddit_rss.py",
+      "scripts\\lib\\reddit_shreddit.py",
+      "scripts\\lib\\registers.py",
+      "scripts\\lib\\relevance.py",
+      "scripts\\lib\\render.py",
+      "scripts\\lib\\rerank.py",
+      "scripts\\lib\\resolve.py",
+      "scripts\\lib\\safari_cookies.py",
+      "scripts\\lib\\schema.py",
+      "scripts\\lib\\setup_wizard.py",
+      "scripts\\lib\\signals.py",
+      "scripts\\lib\\skill_meta.py",
+      "scripts\\lib\\snippet.py",
+      "scripts\\lib\\stocktwits.py",
+      "scripts\\lib\\subproc.py",
+      "scripts\\lib\\techmeme.py",
+      "scripts\\lib\\threads.py",
+      "scripts\\lib\\tiktok.py",
+      "scripts\\lib\\topic_shape.py",
+      "scripts\\lib\\transcribe.py",
+      "scripts\\lib\\trustpilot.py",
+      "scripts\\lib\\truthsocial.py",
+      "scripts\\lib\\ui.py",
+      "scripts\\lib\\web_fetch_keyless.py",
+      "scripts\\lib\\web_search_keyless.py",
+      "scripts\\lib\\x_judge.py",
+      "scripts\\lib\\xai_x.py",
+      "scripts\\lib\\xiaohongshu_api.py",
+      "scripts\\lib\\xquik.py",
+      "scripts\\lib\\xurl_x.py",
+      "scripts\\lib\\youtube_yt.py",
+      "scripts\\store.py",
+      "scripts\\test_device_auth.py",
+      "scripts\\verify_v3.py",
+      "scripts\\watchlist.py"
+    ],
+    "evals": [
+      "evals\\trigger_cases.json"
+    ],
+    "reports": [
+      "reports\\creation-handoff.md",
+      "reports\\output-evidence.json",
+      "reports\\prior-art-research.md",
+      "reports\\skill-ir.json",
+      "reports\\trigger-eval.json"
+    ]
+  },
+  "portability": {
+    "canonical_format": "agent-skills",
+    "adapter_targets": [
+      "openai",
+      "claude",
+      "generic",
+      "agent-skills-compatible",
+      "vscode"
+    ],
+    "activation": {
+      "mode": "manual-or-implicit"
+    },
+    "execution": {
+      "context": "inline-with-local-runtime",
+      "shell": "cross-platform; some optional helpers are POSIX-oriented"
+    },
+    "trust": {
+      "source_tier": "internet-and-local-user-approved-input",
+      "remote_inline_execution": "forbid",
+      "generated_public_claims": "evidence-bound"
+    },
+    "permissions": {
+      "network": "research sources selected by the user and safe provider endpoints",
+      "file_write": "explicit output, store, library, watchlist, or publish paths only",
+      "credentials": "environment or consent-gated keychain/browser-cookie paths"
+    },
+    "degradation": {
+      "openai": "full skill contract and Python runtime",
+      "claude": "full skill contract and Python runtime",
+      "generic": "SKILL.md contract plus locally available runtime",
+      "agent-skills-compatible": "canonical package",
+      "vscode": "SKILL.md contract plus locally available runtime"
+    }
+  },
+  "gates": {},
+  "evidence_boundary": {
+    "generated_reports_are_evidence": true,
+    "planned_work_is_evidence": false,
+    "missing_external_or_human_evidence_label": "missing evidence",
+    "public_claim_policy": "claim only what local validation, install proof, human review, or provider-backed evidence actually supports"
+  }
+}

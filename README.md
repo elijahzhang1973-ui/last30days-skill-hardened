@@ -2,6 +2,8 @@
 
 English | [Français](README.fr.md) | [Deutsch](README.de.md) | [Español](README.es.md) | [Português (Brasil)](README.pt-BR.md) | [日本語](README.ja.md) | [简体中文](README.zh-CN.md)
 
+> **Unofficial hardened distribution.** Based on [`mvanhorn/last30days-skill` v3.21.1](https://github.com/mvanhorn/last30days-skill/releases/tag/v3.21.1). This is not an official mvanhorn release; upstream copyright and MIT terms are preserved.
+
 <p align="center">
   <img src="media/pr-assets/last30days-ad.gif" width="720" alt="last30days - an AI agent-led search engine that searches people, not editors" />
 </p>
@@ -16,7 +18,7 @@ English | [Français](README.fr.md) | [Deutsch](README.de.md) | [Español](READM
   </a>
 </p>
 
-**An AI agent-led search engine scored by upvotes, likes, and real money - not editors.**
+**An AI agent-led search engine scored by community engagement and market signals - not editors.**
 
 This README tracks the current v3 pipeline. The runtime skill spec lives in [skills/last30days/SKILL.md](skills/last30days/SKILL.md), which is the source of truth for the latest command and setup behavior.
 
@@ -38,7 +40,7 @@ Zero config. Reddit, HN, Polymarket, and GitHub work immediately. Run it once an
 
 ---
 
-Reddit upvotes. X likes. YouTube transcripts. TikTok engagement. Polymarket odds backed by real money and insider information. That's millions of people voting with their attention and their wallets every day. /last30days searches all of it in parallel, scores it by what real people actually engage with, and an AI agent judge synthesizes it into one brief.
+Reddit upvotes. X likes. YouTube transcripts. TikTok engagement. Polymarket prices that reflect trader expectations. That's millions of people signaling with their attention and their wallets every day. /last30days searches all of it in parallel, scores it by what real people actually engage with, and an AI agent judge synthesizes it into one brief.
 
 Google aggregates editors. /last30days searches people.
 
@@ -70,7 +72,7 @@ If you're meeting with a CEO, have you read all their tweets and YouTube transcr
 | **TikTok** | The creator reaching 3.6M people with a take you'll never find on Google. |
 | **Instagram Reels** | The influencer perspective with spoken-word transcripts. The visual culture signal. |
 | **Hacker News** | The developer consensus. 825 points, 899 comments. Where technical people actually argue. |
-| **Polymarket** | Not opinions. Odds. Backed by real money. 96% confidence on album sales. 4% on an acquisition. |
+| **Polymarket** | Market-implied probabilities and movements: useful evidence of trader expectations, not fact confidence. |
 | **GitHub** | For people: PR velocity, top repos by stars, release notes. For topics: issues and discussions. |
 | **Digg** | Curated story clusters from Digg's AI 1000 leaderboard (~1000 high-signal AI accounts on X), with attributable inline quotes (no X auth required). Auto-enabled when `digg-pp-cli` is on PATH. |
 | **arXiv** | The papers behind the hype. New research in the window, free, no API key. Auto-enabled when `arxiv-pp-cli` is on PATH (first-run setup installs it). |
@@ -86,7 +88,7 @@ If you're meeting with a CEO, have you read all their tweets and YouTube transcr
 
 Community contributors keep adding more. Truth Social and other niche sources are in the engine with more on the way.
 
-A Reddit thread with 1,500 upvotes is a stronger signal than a blog post nobody read. A TikTok with 3.6M views tells you more about what's culturally relevant than a press release. Polymarket odds backed by $66K in volume are harder to argue with than a pundit's guess.
+A Reddit thread with 1,500 upvotes is a stronger signal than a blog post nobody read. A TikTok with 3.6M views tells you more about what's culturally relevant than a press release. Polymarket adds a distinct view of what traders currently expect, subject to market quality and resolution rules.
 
 The synthesis ranks by what real people actually engaged with. Social relevancy, not SEO relevancy.
 

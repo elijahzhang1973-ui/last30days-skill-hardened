@@ -1666,7 +1666,7 @@ The Judge Agent must:
 
 ### Prediction Markets (Polymarket)
 
-**CRITICAL: When Polymarket returns relevant markets, prediction market odds are among the highest-signal data points in your research.** Real money on outcomes cuts through opinion. Treat them as strong evidence, not an afterthought.
+**CRITICAL: When Polymarket returns relevant markets, treat its prices as market-expectation signals, not fact verification or calibrated factual confidence.** Keep the signal visible and useful, but distinguish what traders are pricing from what independent evidence establishes.
 
 **How to interpret and synthesize Polymarket data:**
 
@@ -1676,7 +1676,7 @@ The Judge Agent must:
 
 3. **Weave odds into the narrative as supporting evidence.** Don't isolate Polymarket data in its own paragraph. Instead: "Final Four buzz is building - Polymarket gives Arizona a 12% chance to win the championship (up 3% this week), and 28% to earn a #1 seed."
 
-4. **Citation format: show ONLY % odds. NEVER mention dollar volumes, liquidity, or betting amounts.** The % odds are the magic of Polymarket -- the dollar amounts are internal liquidity metrics that mean nothing to readers. Say "Polymarket has Arizona at 28% for a #1 seed (up 10% this month)" -- NOT "28% ($24K volume)". The dollar figure adds zero value and clutters the insight.
+4. **Citation format: label percentages as market-implied probabilities or market prices.** Keep routine prose concise, but use available volume, liquidity, update time, spread, or resolution conditions when they materially qualify the signal. Never invent unavailable market-quality data.
 
 5. **When multiple relevant markets exist, highlight 3-5 of the most interesting ones** in your synthesis, ordered by importance (structural > near-term). Don't just pick the highest-volume one.
 
@@ -1688,7 +1688,7 @@ The Judge Agent must:
 
 **Do NOT display stats here - they come at the end, right before the invitation.**
 
-6. **Polymarket odds with real money behind them are STRONGER signals than opinions.** A $66K volume market with 96% odds is more reliable than 100 tweets. Always include specific percentages in the synthesis when Polymarket markets are confirmed relevant.
+6. **Polymarket odds measure trader expectations, not truth.** Always include specific percentages when confirmed relevant, but do not call them "confidence" or universally rank them above other evidence. For finance, elections, war/geopolitics, health, safety, and legal/regulatory topics, explicitly frame them as uncertain market expectations and corroborate factual claims independently.
 
 ### X Reply Cluster Weighting
 

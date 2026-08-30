@@ -2,6 +2,8 @@
 
 [English](README.md) | [Français](README.fr.md) | [Deutsch](README.de.md) | [Español](README.es.md) | [Português (Brasil)](README.pt-BR.md) | [日本語](README.ja.md) | 简体中文
 
+> **非官方加固发行版。** 基于 [`mvanhorn/last30days-skill` v3.21.1](https://github.com/mvanhorn/last30days-skill/releases/tag/v3.21.1)。这不是 mvanhorn 的官方发行版；保留上游版权声明和 MIT 许可条款。
+
 <p align="center">
   <img src="media/pr-assets/last30days-ad.gif" width="720" alt="last30days——由 AI 智能体驱动、搜索真实用户而非编辑内容的搜索引擎" />
 </p>
@@ -41,7 +43,7 @@ npx skills add mvanhorn/last30days-skill -g
 
 ---
 
-Reddit 的赞同票、X 的点赞、YouTube 的完整字幕、TikTok 的互动数据，以及由真金白银和内幕信息支撑的 Polymarket 概率——每天都有数百万人用注意力和钱包投票。`/last30days` 会并行搜索这些平台，按照真实用户的参与度评分，再由 AI 智能体裁判综合成一份简报。
+Reddit 的赞同票、X 的点赞、YouTube 的完整字幕、TikTok 的互动数据，以及反映交易者预期的 Polymarket 市场价格——每天都有数百万人用注意力和钱包发出信号。`/last30days` 会并行搜索这些平台，按照真实用户的参与度评分，再由 AI 智能体裁判综合成一份简报。
 
 Google 聚合编辑选出的内容，`/last30days` 搜索真实的人。
 
@@ -73,7 +75,7 @@ Google 聚合编辑选出的内容，`/last30days` 搜索真实的人。
 | **TikTok** | 一个触达 360 万人的创作者观点——你永远不会在 Google 上搜到。 |
 | **Instagram Reels** | 带口播字幕的影响者视角，反映视觉文化的信号。 |
 | **Hacker News** | 开发者共识：825 分、899 条评论，技术从业者真正交锋的地方。 |
-| **Polymarket** | 不是观点，而是由真金白银支撑的概率：专辑销量 96%，收购概率 4%。 |
+| **Polymarket** | 市场隐含概率及其变化：可用于理解交易者预期，但不等同于事实置信度。 |
 | **GitHub** | 搜人时查看 PR 速度、按 Star 排名的热门仓库和发行说明；搜主题时查看 Issue 与 Discussion。 |
 | **Digg** | 来自 Digg AI 1000 排行榜（约 1,000 个高信号 X 账号）的精选话题聚类，包含可追溯的行内引用，无需 X 认证。当 PATH 中存在 `digg-pp-cli` 时自动启用。 |
 | **arXiv** | 热点背后的论文。免费查找时间窗口内的新研究，无需 API 密钥。当 PATH 中存在 `arxiv-pp-cli` 时自动启用（首次配置会安装）。 |
@@ -89,7 +91,7 @@ Google 聚合编辑选出的内容，`/last30days` 搜索真实的人。
 
 社区贡献者仍在不断加入更多平台。Truth Social 等垂直来源已经进入引擎，更多来源也在路上。
 
-一条获得 1,500 个赞同票的 Reddit 帖子，信号强度高于一篇无人阅读的博客；一个拥有 360 万次观看的 TikTok，比新闻稿更能说明当下的文化热点；一个有 6.6 万美元成交量支撑的 Polymarket 概率，也比评论员的猜测更难反驳。
+一条获得 1,500 个赞同票的 Reddit 帖子，信号强度高于一篇无人阅读的博客；一个拥有 360 万次观看的 TikTok，比新闻稿更能说明当下的文化热点；Polymarket 则补充交易者当前预期，但应结合市场质量和结算规则理解。
 
 综合排序依据的是人们真正参与过的内容——看社会相关性，而不是 SEO 相关性。
 

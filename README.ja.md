@@ -2,6 +2,8 @@
 
 [English](README.md) | [Français](README.fr.md) | [Deutsch](README.de.md) | [Español](README.es.md) | [Português (Brasil)](README.pt-BR.md) | 日本語 | [简体中文](README.zh-CN.md)
 
+> **非公式の強化版です。** [`mvanhorn/last30days-skill` v3.21.1](https://github.com/mvanhorn/last30days-skill/releases/tag/v3.21.1) を基にしています。mvanhorn の公式リリースではありません。上流の著作権表示と MIT ライセンスを維持しています。
+
 <p align="center">
   <img src="media/pr-assets/last30days-ad.gif" width="720" alt="last30days - an AI agent-led search engine that searches people, not editors" />
 </p>
@@ -38,7 +40,7 @@ npx skills add mvanhorn/last30days-skill -g
 
 ---
 
-Reddit のアップボート。X のいいね。YouTube の文字起こし。TikTok のエンゲージメント。実際のお金とインサイダー情報に裏打ちされた Polymarket のオッズ。つまり、毎日何百万人もの人が自分の注意と財布で投票しているということです。/last30days はそのすべてを並行して検索し、実際に人々が反応したかどうかでスコアを付け、AIエージェントが判定役となって1本のブリーフにまとめます。
+Reddit のアップボート。X のいいね。YouTube の文字起こし。TikTok のエンゲージメント。トレーダーの期待を示す Polymarket の価格。何百万人もの人が注意と財布で発するシグナルを /last30days が並行して検索し、1本のブリーフにまとめます。
 
 Google は編集者を束ねます。/last30days は人を検索します。
 
@@ -70,7 +72,7 @@ CEOと会うとして、直近30日間のツイートと YouTube の文字起こ
 | **TikTok** | Google では絶対に見つからない切り口で360万人に届いているクリエイター。 |
 | **Instagram Reels** | 話した内容の文字起こし付きで届く、インフルエンサーの視点。ビジュアル文化のシグナルです。 |
 | **Hacker News** | 開発者の総意。825ポイント、899コメント。技術寄りの人たちが本気で議論している場所です。 |
-| **Polymarket** | 意見ではなく、オッズ。実際のお金が裏付けています。アルバムの売上に96%、買収に4%といった具合です。 |
+| **Polymarket** | 市場が織り込む確率と変化。トレーダーの期待を示しますが、事実の確信度ではありません。 |
 | **GitHub** | 人物について: PRの勢い、スター数の多いリポジトリ、リリースノート。トピックについて: Issue と Discussion。 |
 | **Digg** | Digg の AI 1000 リーダーボード(X 上でシグナルの強いAI関連アカウント約1000件)から集めたストーリークラスター。出典をたどれるインライン引用付きで、X の認証は不要です。`digg-pp-cli` が PATH にあると自動的に有効になります。 |
 | **arXiv** | 話題の裏側にある論文。対象期間に出た新しい研究が、無料・APIキーなしで手に入ります。`arxiv-pp-cli` が PATH にあると自動的に有効になります(初回セットアップでインストールされます)。 |
@@ -86,7 +88,7 @@ CEOと会うとして、直近30日間のツイートと YouTube の文字起こ
 
 コミュニティが今も情報源を増やし続けています。Truth Social をはじめとするニッチな情報源もすでにエンジンに入っていて、さらに追加予定です。
 
-1,500アップボートの Reddit スレッドは、誰にも読まれなかったブログ記事よりも強いシグナルです。360万回再生の TikTok は、プレスリリースよりも「今、文化的に何が効いているか」を語ります。6.6万ドルの出来高に裏打ちされた Polymarket のオッズは、評論家の当て推量よりも反論しにくいものです。
+1,500アップボートの Reddit スレッドは、誰にも読まれなかったブログ記事よりも強いシグナルです。360万回再生の TikTok は、プレスリリースよりも「今、文化的に何が効いているか」を語ります。Polymarket は市場の質と決済ルールを前提に、トレーダーの現在の期待という別の視点を加えます。
 
 この統合処理は、実在の人々が実際に反応したかどうかで順位を付けます。SEO上の関連性ではなく、社会的な関連性です。
 

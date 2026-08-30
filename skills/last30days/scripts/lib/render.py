@@ -410,7 +410,7 @@ def _render_ranked_clusters(
         )
     for index, cluster in enumerate(solid_clusters, start=1):
         lines.append(
-            f"### {index}. {cluster.title} "
+            f"### {index}. {_format_untrusted_title(cluster.title)} "
             f"(score {cluster.score:.0f}, {len(cluster.candidate_ids)} "
             f"item{'s' if len(cluster.candidate_ids) != 1 else ''}, "
             f"sources: {', '.join(_source_label(source) for source in cluster.sources)})"
@@ -536,7 +536,7 @@ def _render_corpus_section(report: schema.Report, limit: int = 8) -> list[str]:
         published = primary.published_at if primary else None
         detail = f"modified {published}" if published else "modification date unknown"
         lines.append(
-            f"- **{_defang_corpus_sentinels(candidate.title)}** "
+            f"- **{_format_untrusted_title(_defang_corpus_sentinels(candidate.title))}** "
             f"({detail}, relevance {candidate.final_score:.0f})"
         )
         if path:
@@ -555,7 +555,9 @@ def _defang_corpus_sentinels(value: str) -> str:
     A note containing the literal end marker would otherwise close the block
     early, leaving later corpus snippets in publishable output.
     """
-    return value.replace("LAST30DAYS_PRIVATE_CORPUS", "LAST30DAYS_PRIVATE-CORPUS")
+    return _defang_engine_control(value).replace(
+        "LAST30DAYS_PRIVATE_CORPUS", "LAST30DAYS_PRIVATE-CORPUS"
+    )
 
 
 _FRESHNESS_PRIORITY = {
@@ -1554,7 +1556,7 @@ def _render_entity_evidence_block(
         )
     for index, cluster in enumerate(visible_clusters, start=1):
         out.append(
-            f"#### {index}. {cluster.title} "
+            f"#### {index}. {_format_untrusted_title(cluster.title)} "
             f"(score {cluster.score:.0f}, {len(cluster.candidate_ids)} item"
             f"{'s' if len(cluster.candidate_ids) != 1 else ''}, "
             f"sources: {', '.join(_source_label(s) for s in cluster.sources)})"
@@ -1634,7 +1636,7 @@ def render_comparison_multi_context(
         else:
             for cluster in visible_clusters:
                 lines.append(
-                    f"- {cluster.title} "
+                    f"- {_format_untrusted_title(cluster.title)} "
                     f"[{', '.join(_source_label(s) for s in cluster.sources)}]"
                 )
         corpus_section = _render_corpus_section(report)
@@ -1821,7 +1823,7 @@ def render_full(report: schema.Report, save_path: str | None = None) -> str:
             lines.append(
                 f"**{item.item_id}** (score:{score:.0f}) {item.author or ''} ({item.published_at or 'date unknown'}) [{_format_item_engagement(item)}]"
             )
-            lines.append(f"  {item.title}")
+            lines.append(f"  {_format_untrusted_title(item.title)}")
             if item.url:
                 rendered_url = _markdown_url_link(item.url)
                 if rendered_url:
@@ -1885,7 +1887,7 @@ def render_full(report: schema.Report, save_path: str | None = None) -> str:
             if outcome_prices and item.source == "polymarket":
                 question = item.metadata.get("question") or ""
                 if question and question != item.title:
-                    lines.append(f"  Question: {question}")
+                    lines.append(f"  Question: {_format_untrusted_title(question)}")
                 odds_parts = []
                 for name, price in outcome_prices:
                     if isinstance(price, (int, float)):
@@ -1894,7 +1896,7 @@ def render_full(report: schema.Report, save_path: str | None = None) -> str:
                             if price >= 0.1
                             else f"{price * 100:.1f}%"
                         )
-                        odds_parts.append(f"{name}: {pct}")
+                        odds_parts.append(f"{_format_untrusted_title(str(name))}: {pct}")
                 if odds_parts:
                     lines.append(f"  Odds: {' | '.join(odds_parts)}")
                 remaining = item.metadata.get("outcomes_remaining") or 0
@@ -2005,7 +2007,7 @@ def render_context(report: schema.Report, cluster_limit: int = 6) -> str:
         lines.append("- Nothing solid this window.")
     for cluster in visible_clusters:
         lines.append(
-            f"- {cluster.title} [{', '.join(_source_label(source) for source in cluster.sources)}]"
+            f"- {_format_untrusted_title(cluster.title)} [{', '.join(_source_label(source) for source in cluster.sources)}]"
         )
         for candidate_id in _qualifying_representative_ids(
             cluster,
@@ -2017,7 +2019,7 @@ def render_context(report: schema.Report, cluster_limit: int = 6) -> str:
                 continue
             detail_parts = [
                 schema.candidate_source_label(candidate),
-                candidate.title,
+                _format_untrusted_title(candidate.title),
                 schema.candidate_best_published_at(candidate) or "date unknown",
                 candidate.url,
             ]
@@ -2095,7 +2097,7 @@ def render_brief(report: schema.Report, cluster_limit: int = 8) -> str:
             f" [{cluster.uncertainty.replace('-', ' ')}]" if cluster.uncertainty else ""
         )
         lines.append(
-            f"### {i}. {cluster.title} (score {cluster.score:.0f}, {source_tags}){qualifier}"
+            f"### {i}. {_format_untrusted_title(cluster.title)} (score {cluster.score:.0f}, {source_tags}){qualifier}"
         )
         for cid in _qualifying_representative_ids(
             cluster,
@@ -2143,7 +2145,7 @@ def render_brief(report: schema.Report, cluster_limit: int = 8) -> str:
                 else ""
             )
             lines.append(
-                f'- "{_truncate(candidate.title, 200)}"'
+                f'- "{_format_untrusted_title(candidate.title, 200)}"'
                 f" ({attribution}, fun:{candidate.fun_score:.0f}){reason}"
             )
         lines.append("")
@@ -2159,7 +2161,7 @@ def render_brief(report: schema.Report, cluster_limit: int = 8) -> str:
                 else ""
             )
             source_tags = ", ".join(_source_label(s) for s in cluster.sources)
-            lines.append(f"- **{cluster.title}** [{label}]: {source_tags}")
+            lines.append(f"- **{_format_untrusted_title(cluster.title)}** [{label}]: {source_tags}")
         lines.append("")
 
     questions = _extract_audience_questions(qualifying_candidates)
@@ -2174,7 +2176,7 @@ def render_brief(report: schema.Report, cluster_limit: int = 8) -> str:
     lines.append("")
     for cluster in visible_clusters:
         source_tags = " + ".join(_source_label(s) for s in cluster.sources)
-        lines.append(f"- **{cluster.title}**: {source_tags}")
+        lines.append(f"- **{_format_untrusted_title(cluster.title)}**: {source_tags}")
     lines.append("")
 
     corpus_section = _render_corpus_section(report)
@@ -2195,7 +2197,7 @@ def _extract_audience_questions(candidates: list[schema.Candidate]) -> list[str]
     questions: list[str] = []
     seen: set[str] = set()
     for candidate in candidates:
-        title = candidate.title.strip()
+        title = _format_untrusted_title(candidate.title)
         if not title:
             continue
         if title.endswith("?"):
@@ -2258,7 +2260,7 @@ def _render_hiring_signals(
             f"evidence: {signal.get('evidence_count', len(evidence))} roles)"
         )
         for item in evidence[:3]:
-            title = item.get("title") or "Job posting"
+            title = _format_untrusted_title(item.get("title") or "Job posting")
             url = item.get("url") or ""
             dept = item.get("department") or ""
             date = item.get("published_at") or "date unknown"
@@ -2275,7 +2277,7 @@ def _render_hiring_signals(
             'distinguish "new bets" from "doubling down"):'
         )
         for cand in strategic[:8]:
-            title = cand.get("title") or "Job posting"
+            title = _format_untrusted_title(cand.get("title") or "Job posting")
             url = cand.get("url") or ""
             flags = ", ".join(cand.get("flags") or [])
             dept = cand.get("department") or ""
@@ -2310,7 +2312,7 @@ def _render_candidate(
         detail_parts.append("interaction:→@" + ",@".join(interaction_targets[:2]))
     details = " | ".join(part for part in detail_parts if part)
     lines = [
-        f"{prefix} [{schema.candidate_source_label(candidate)}] {candidate.title}"
+        f"{prefix} [{schema.candidate_source_label(candidate)}] {_format_untrusted_title(candidate.title)}"
         + (_candidate_freshness_flag(report, candidate.candidate_id) if report else ""),
         f"   - {details}",
     ]
@@ -3645,6 +3647,27 @@ def _truncate(text: str, limit: int) -> str:
     return text[: limit - 3].rstrip() + "..."
 
 
+_ENGINE_CONTROL_SENTINEL = re.compile(
+    r"END PASS-THROUGH FOOTER|PASS-THROUGH FOOTER|"
+    r"END EVIDENCE FOR SYNTHESIS|EVIDENCE FOR SYNTHESIS",
+    re.IGNORECASE,
+)
+
+
+def _defang_engine_control(text: str) -> str:
+    """Keep source text readable without letting it mint engine control syntax."""
+    safe = text.replace("<!--", "&lt;!--").replace("-->", "--&gt;")
+    return _ENGINE_CONTROL_SENTINEL.sub(
+        lambda match: match.group(0).replace(" ", "\u00a0"), safe
+    )
+
+
+def _format_untrusted_title(text: str, limit: int | None = None) -> str:
+    """Collapse attacker-controlled titles to one defanged structural line."""
+    safe = _defang_engine_control(" ".join(str(text or "").split()))
+    return _truncate(safe, limit) if limit is not None else safe
+
+
 _ATX_HEADING_PREFIX = re.compile(r"^(#{1,6})(\s|$)")
 
 
@@ -3676,7 +3699,7 @@ def _format_untrusted_evidence(
     lines stay indented (CommonMark ATX headings need ≤3 leading spaces), and
     leading ``#`` runs are escaped as defense in depth.
     """
-    truncated = _truncate(text, limit)
+    truncated = _truncate(_defang_engine_control(text), limit)
     if not truncated:
         return truncated
     lines = truncated.splitlines()

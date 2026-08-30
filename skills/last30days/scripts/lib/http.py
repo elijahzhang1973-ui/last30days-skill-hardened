@@ -37,6 +37,55 @@ RETRY_DELAY = 2.0
 MIN_DNS_RETRIES = 3
 USER_AGENT = "last30days-skill/3.0 (Assistant Skill)"
 
+# Headers in this inventory authenticate a caller or carry session authority.
+# They may survive redirects within one Origin, but never cross an Origin.
+CREDENTIAL_HEADER_NAMES = frozenset(
+    {
+        "api-key",
+        "authorization",
+        "cookie",
+        "ocp-apim-subscription-key",
+        "proxy-authorization",
+        "subscription-key",
+        "x-api-key",
+        "x-auth-token",
+        "x-csrf-token",
+    }
+)
+
+
+def _url_origin(url: str) -> tuple[str, str, int | None]:
+    """Return a normalized (scheme, hostname, effective-port) Origin tuple."""
+    parts = urlsplit(url)
+    scheme = parts.scheme.casefold()
+    hostname = (parts.hostname or "").rstrip(".").casefold()
+    port = parts.port
+    if port is None:
+        port = {"http": 80, "https": 443}.get(scheme)
+    return scheme, hostname, port
+
+
+class CredentialSafeRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Preserve credentials only when urllib follows a same-Origin redirect."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        redirected = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if redirected is None or _url_origin(req.full_url) == _url_origin(newurl):
+            return redirected
+        for mapping in (redirected.headers, redirected.unredirected_hdrs):
+            for name in list(mapping):
+                if name.casefold() in CREDENTIAL_HEADER_NAMES:
+                    del mapping[name]
+        return redirected
+
+
+# Keep urllib's normal proxy/TLS/cookie handlers while replacing only redirect
+# credential propagation. Installing here protects every stdlib urlopen call in
+# the engine, including adapters that do not route through request_json().
+urllib.request.install_opener(
+    urllib.request.build_opener(CredentialSafeRedirectHandler())
+)
+
 _failure_sink: ContextVar[Optional[list["HTTPError"]]] = ContextVar(
     "last30days_http_failure_sink",
     default=None,

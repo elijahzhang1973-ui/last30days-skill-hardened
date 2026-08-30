@@ -109,7 +109,7 @@ Agents should discover the current publishing mechanics for the selected service
 When the user chooses the built-in `ht-ml.app` path, add `--publish-html` to the same `--emit=html` command. Use `--output "$HTML_PATH"` rather than shell redirection so the engine can write the `.publish.json` companion metadata next to the local HTML file. On the password-protected branch, set `LAST30DAYS_PUBLISH_PASSWORD` in the subprocess environment instead of passing `--publish-password` in the shell command.
 
 ```bash
-LAST30DAYS_PUBLISH_PASSWORD="${PUBLISH_PASSWORD:-}" \
+export LAST30DAYS_PUBLISH_PASSWORD
 "${LAST30DAYS_PYTHON}" "${SKILL_ROOT}/scripts/last30days.py" "${TOPIC}" \
   --emit=html \
   --synthesis-file "$SYNTHESIS_FILE" \

@@ -4,12 +4,15 @@ from __future__ import annotations
 
 from typing import Any
 
+from . import providers
+
 
 ENDPOINT_OVERRIDE_KEYS = {
     "BSKY_SEARCH_HOST",
     "LAST30DAYS_SEARXNG_URL",
     "LAST30DAYS_YOUTUBE_SSH_HOST",
     "OPENAI_BASE_URL",
+    "OPENROUTER_BASE_URL",
     "XAI_BASE_URL",
     "XIAOHONGSHU_API_BASE",
 }
@@ -88,13 +91,13 @@ def build(
         conditional_writes.append({"kind": "report_on_save", "path": str(report_on_save_dir)})
     conditional_writes = _dedupe_writes(conditional_writes)
 
-    providers = dict(diagnose.get("providers") or {})
+    provider_status = dict(diagnose.get("providers") or {})
     credentials = {
-        "google": {"present": bool(providers.get("google")), "label": PROVIDER_CREDENTIALS["google"]},
-        "openai": {"present": bool(providers.get("openai")), "label": PROVIDER_CREDENTIALS["openai"]},
-        "xai": {"present": bool(providers.get("xai")), "label": PROVIDER_CREDENTIALS["xai"]},
-        "openrouter": {"present": bool(providers.get("openrouter")), "label": PROVIDER_CREDENTIALS["openrouter"]},
-        "perplexity": {"present": bool(providers.get("perplexity")), "label": PROVIDER_CREDENTIALS["perplexity"]},
+        "google": {"present": bool(provider_status.get("google")), "label": PROVIDER_CREDENTIALS["google"]},
+        "openai": {"present": bool(provider_status.get("openai")), "label": PROVIDER_CREDENTIALS["openai"]},
+        "xai": {"present": bool(provider_status.get("xai")), "label": PROVIDER_CREDENTIALS["xai"]},
+        "openrouter": {"present": bool(provider_status.get("openrouter")), "label": PROVIDER_CREDENTIALS["openrouter"]},
+        "perplexity": {"present": bool(provider_status.get("perplexity")), "label": PROVIDER_CREDENTIALS["perplexity"]},
         "scrapecreators": {
             "present": bool(diagnose.get("has_scrapecreators")),
             "label": PROVIDER_CREDENTIALS["scrapecreators"],
@@ -102,10 +105,21 @@ def build(
         "github": {"present": bool(diagnose.get("has_github")), "label": PROVIDER_CREDENTIALS["github"]},
     }
 
-    active_endpoint_overrides = sorted(
-        key for key in ENDPOINT_OVERRIDE_KEYS if config.get(key)
-    )
-    ignored_endpoint_overrides = sorted(diagnose.get("ignored_endpoint_overrides") or [])
+    active_endpoint_overrides: list[str] = []
+    ignored_endpoint_overrides = set(diagnose.get("ignored_endpoint_overrides") or [])
+    for key in ENDPOINT_OVERRIDE_KEYS:
+        value = config.get(key)
+        if not value:
+            continue
+        if (
+            key in providers.PROVIDER_ENDPOINT_OVERRIDE_KEYS
+            and not providers.provider_endpoint_override_allowed(value)
+        ):
+            ignored_endpoint_overrides.add(key)
+        else:
+            active_endpoint_overrides.append(key)
+    active_endpoint_overrides.sort()
+    ignored_endpoint_overrides = sorted(ignored_endpoint_overrides)
     external_commands = {
         name: {"status": _status(bool(available))}
         for name, available in sorted((diagnose.get("external_commands") or {}).items())

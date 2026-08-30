@@ -11,6 +11,7 @@ Flow:
     4. Fetches your profile and prints your API key
 """
 
+import argparse
 import json
 import sys
 import time
@@ -37,6 +38,7 @@ def _get(url, token):
 
 
 def main():
+    argparse.ArgumentParser(description=__doc__).parse_args()
     # Step 1: Start device flow
     print("Starting ScrapeCreators GitHub device auth...\n")
     try:

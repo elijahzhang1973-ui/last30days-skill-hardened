@@ -72,7 +72,7 @@ case "$ACTION" in
   list)
     echo "Stored last30days-* keychain items:"
     for key in "${ALL_KEYS[@]}"; do
-      if security find-generic-password -a "$USER" -s "${PREFIX}${key}" -w >/dev/null 2>&1; then
+      if security find-generic-password -a "$USER" -s "${PREFIX}${key}" >/dev/null 2>&1; then
         echo "  $key"
       fi
     done
@@ -99,8 +99,11 @@ fi
 
 added=0; skipped=0; replaced=0
 for key in "${TARGETS[@]}"; do
-  existing="$(security find-generic-password -a "$USER" -s "${PREFIX}${key}" -w 2>/dev/null || true)"
-  if [[ -n "$existing" && "$REPLACE" -eq 0 ]]; then
+  exists=0
+  if security find-generic-password -a "$USER" -s "${PREFIX}${key}" >/dev/null 2>&1; then
+    exists=1
+  fi
+  if [[ "$exists" -eq 1 && "$REPLACE" -eq 0 ]]; then
     printf "  %-28s (set, skipping — use --replace to overwrite)\n" "$key"
     skipped=$((skipped + 1))
     continue
@@ -112,12 +115,17 @@ for key in "${TARGETS[@]}"; do
     skipped=$((skipped + 1))
     continue
   fi
-  security add-generic-password -U -a "$USER" -s "${PREFIX}${key}" -w "$value"
-  if [[ -n "$existing" ]]; then
+  # With -w at the end and no argv value, security prompts twice. Feed both
+  # answers on stdin so the plaintext never appears in the process listing.
+  printf '%s\n%s\n' "$value" "$value" |
+    security add-generic-password -U -a "$USER" -s "${PREFIX}${key}" -w \
+      >/dev/null 2>&1
+  if [[ "$exists" -eq 1 ]]; then
     replaced=$((replaced + 1))
   else
     added=$((added + 1))
   fi
+  unset value
 done
 
 echo

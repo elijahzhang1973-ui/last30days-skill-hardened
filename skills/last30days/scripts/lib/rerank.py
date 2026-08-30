@@ -315,11 +315,19 @@ def _intent_hint_block(plan: schema.QueryPlan) -> str:
 
 
 def _fenced_untrusted_content(candidate_block: str) -> str:
+    # A scraped closing tag must remain visible data, never terminate the
+    # engine-owned fence. Match case-insensitively and across tag whitespace.
+    safe_block = re.sub(
+        r"<\s*(/?)\s*untrusted_content\s*>",
+        lambda match: match.group(0).replace("<", "&lt;").replace(">", "&gt;"),
+        candidate_block,
+        flags=re.IGNORECASE,
+    )
     return (
         f"{UNTRUSTED_CONTENT_NOTICE}\n\n"
         "Candidates:\n"
         "<untrusted_content>\n"
-        f"{candidate_block}\n"
+        f"{safe_block}\n"
         "</untrusted_content>"
     )
 

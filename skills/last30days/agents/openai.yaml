@@ -6,3 +6,26 @@ interface:
 
 policy:
   allow_implicit_invocation: true
+
+compatibility:
+  canonical_format: "agent-skills"
+  adapter_targets: ["openai", "claude", "generic", "agent-skills-compatible", "vscode"]
+  activation:
+    mode: "manual-or-implicit"
+  execution:
+    context: "inline-with-local-runtime"
+    shell: "cross-platform; some optional helpers are POSIX-oriented"
+  trust:
+    source_tier: "internet-and-local-user-approved-input"
+    remote_inline_execution: "forbid"
+    generated_public_claims: "evidence-bound"
+  permissions:
+    network: "research sources selected by the user and safe provider endpoints"
+    file_write: "explicit output, store, library, watchlist, or publish paths only"
+    credentials: "environment or consent-gated keychain/browser-cookie paths"
+  degradation:
+    openai: "full skill contract and Python runtime"
+    claude: "full skill contract and Python runtime"
+    generic: "SKILL.md contract plus locally available runtime"
+    agent-skills-compatible: "canonical package"
+    vscode: "SKILL.md contract plus locally available runtime"

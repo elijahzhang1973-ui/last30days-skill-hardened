@@ -1,0 +1,160 @@
+{
+  "ok": true,
+  "threshold": 0.4,
+  "description_concepts": [
+    "health",
+    "identity",
+    "recent_research",
+    "sources",
+    "synthesis"
+  ],
+  "missing_description_concepts": [],
+  "summary": {
+    "total": 11,
+    "passed": 11,
+    "false_positive": 0,
+    "false_negative": 0,
+    "pass_rate": 1.0
+  },
+  "failures": [],
+  "results": {
+    "should_trigger": [
+      {
+        "prompt": "用 last30days 研究最近30天大家如何评价这个产品",
+        "family": "explicit_cn",
+        "expected_trigger": true,
+        "predicted_trigger": true,
+        "passed": true,
+        "score": 0.6,
+        "matched_concepts": [
+          "identity",
+          "recent_research",
+          "synthesis"
+        ],
+        "negative_pattern": null
+      },
+      {
+        "prompt": "Research the latest community discussion across Reddit, X, YouTube, and the web",
+        "family": "recent_sources_en",
+        "expected_trigger": true,
+        "predicted_trigger": true,
+        "passed": true,
+        "score": 0.6,
+        "matched_concepts": [
+          "recent_research",
+          "sources",
+          "synthesis"
+        ],
+        "negative_pattern": null
+      },
+      {
+        "prompt": "比较两个数据库最近一个月的社区反馈并综合成简报",
+        "family": "comparison_cn",
+        "expected_trigger": true,
+        "predicted_trigger": true,
+        "passed": true,
+        "score": 0.6,
+        "matched_concepts": [
+          "recent_research",
+          "sources",
+          "synthesis"
+        ],
+        "negative_pattern": null
+      },
+      {
+        "prompt": "Run the last30days doctor health check and preflight",
+        "family": "diagnostic_en",
+        "expected_trigger": true,
+        "predicted_trigger": true,
+        "passed": true,
+        "score": 0.4,
+        "matched_concepts": [
+          "health",
+          "identity"
+        ],
+        "negative_pattern": null
+      },
+      {
+        "prompt": "检查最近一个月这个 GitHub 项目的发布和开发者讨论",
+        "family": "github_cn",
+        "expected_trigger": true,
+        "predicted_trigger": true,
+        "passed": true,
+        "score": 0.4,
+        "matched_concepts": [
+          "recent_research",
+          "sources"
+        ],
+        "negative_pattern": null
+      }
+    ],
+    "should_not_trigger": [
+      {
+        "prompt": "把这段英文只翻译成中文",
+        "family": "translation",
+        "expected_trigger": false,
+        "predicted_trigger": false,
+        "passed": true,
+        "score": 0.0,
+        "matched_concepts": [],
+        "negative_pattern": "只翻译"
+      },
+      {
+        "prompt": "解释牛顿第二定律，timeless definition only",
+        "family": "timeless",
+        "expected_trigger": false,
+        "predicted_trigger": false,
+        "passed": true,
+        "score": 0.0,
+        "matched_concepts": [],
+        "negative_pattern": "timeless definition only"
+      },
+      {
+        "prompt": "给这个 Python 函数只改代码，不要查网络",
+        "family": "code_edit",
+        "expected_trigger": false,
+        "predicted_trigger": false,
+        "passed": true,
+        "score": 0.2,
+        "matched_concepts": [
+          "sources"
+        ],
+        "negative_pattern": "不要查网络"
+      }
+    ],
+    "near_neighbor": [
+      {
+        "prompt": "总结我已经贴出的文章，禁止联网",
+        "family": "supplied_summary",
+        "expected_trigger": false,
+        "predicted_trigger": false,
+        "passed": true,
+        "score": 0.0,
+        "matched_concepts": [],
+        "negative_pattern": "禁止联网"
+      },
+      {
+        "prompt": "帮我写一份不需要近期数据的通用产品介绍",
+        "family": "generic_copy",
+        "expected_trigger": false,
+        "predicted_trigger": false,
+        "passed": true,
+        "score": 0.2,
+        "matched_concepts": [
+          "recent_research"
+        ],
+        "negative_pattern": null
+      },
+      {
+        "prompt": "只查看本地 git diff 并做代码审查",
+        "family": "local_review",
+        "expected_trigger": false,
+        "predicted_trigger": false,
+        "passed": true,
+        "score": 0.0,
+        "matched_concepts": [],
+        "negative_pattern": null
+      }
+    ]
+  }
+}
