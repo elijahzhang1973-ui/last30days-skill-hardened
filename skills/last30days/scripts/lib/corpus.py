@@ -43,6 +43,7 @@ class CorpusScanResult:
     notes: list[str] = field(default_factory=list)
     files_scanned: int = 0
     cache_hits: int = 0
+    unreadable_roots: int = 0
 
 
 def resolve_directories(
@@ -108,8 +109,10 @@ def search(
     pdf_unavailable_noted = False
 
     readable_roots: list[Path] = []
+    unreadable_roots = 0
     for root in roots:
         if not root.is_dir():
+            unreadable_roots += 1
             notes.append(f"Skipped corpus root '{Path(root).name}': not a readable directory")
             continue
         readable_roots.append(root)
@@ -216,6 +219,7 @@ def search(
         notes=notes,
         files_scanned=files_scanned,
         cache_hits=cache_hits,
+        unreadable_roots=unreadable_roots,
     )
 
 

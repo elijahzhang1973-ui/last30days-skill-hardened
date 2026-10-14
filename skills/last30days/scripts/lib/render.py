@@ -12,15 +12,19 @@ from urllib.parse import urlparse
 from . import (
     amazon,
     dates,
+    fusion,
     health,
     hiring_signals,
     library_index,
+    meta_ads,
     registers,
     relevance,
     rerank,
     schema,
     signals,
     skill_meta,
+    untrusted,
+    x_envelope,
 )
 
 
@@ -90,13 +94,13 @@ def _format_discovery_engagement(
     parts: list[str] = []
     for source, metrics in engagement.items():
         metric_parts = [
-            f"{field.replace('_', ' ')} {value:,.0f}"
+            f"{_safe_inline(field.replace('_', ' '), limit=120)} {value:,.0f}"
             for field, value in metrics.items()
             if value
         ]
         if metric_parts:
             parts.append(
-                f"{SOURCE_LABELS.get(source, source.title())}: {', '.join(metric_parts)}"
+                f"{_source_label(source)}: {', '.join(metric_parts)}"
             )
     return " · ".join(parts) or "No native engagement counters reported"
 
@@ -104,18 +108,21 @@ def _format_discovery_engagement(
 def render_discovery(report: schema.DiscoveryReport) -> str:
     """Render a compact topic-per-section discovery brief."""
     title = (
-        f"# Trending discovery: {report.domain}" if report.domain else "# Trending now"
+        f"# Trending discovery: {_safe_title(report.domain)}"
+        if report.domain
+        else "# Trending now"
     )
     lines = [
         *_render_badge(),
         title,
         "",
         f"Window: {report.range_from} to {report.range_to}",
-        f"Feeds: {', '.join(report.plan.sources)}",
+        f"Feeds: {', '.join(_safe_inline(source, limit=80) for source in report.plan.sources)}",
     ]
     if report.plan.subreddits:
         lines.append(
-            "Communities: " + ", ".join(f"r/{sub}" for sub in report.plan.subreddits)
+            "Communities: "
+            + ", ".join(f"r/{_safe_inline(sub, limit=120)}" for sub in report.plan.subreddits)
         )
     lines.append("")
 
@@ -133,7 +140,7 @@ def render_discovery(report: schema.DiscoveryReport) -> str:
             if report.weak_signal:
                 lines.extend(
                     [
-                        f"Closest weak signal: {report.weak_signal} (sub-floor; "
+                        f"Closest weak signal: {_safe_title(report.weak_signal)} (sub-floor; "
                         "single-source or too little engagement).",
                         "",
                     ]
@@ -149,32 +156,41 @@ def render_discovery(report: schema.DiscoveryReport) -> str:
         )
         lines.extend(
             [
-                f"## {topic.rank}. {topic.name}",
+                f"## {topic.rank}. {_safe_title(topic.name)}",
                 "",
                 f"**Momentum:** {momentum} · velocity {topic.velocity_score:,.2f}{confirmation}",
                 "",
-                topic.why_spiking,
+                untrusted.sanitize_untrusted_text(topic.why_spiking, limit=1200),
                 "",
             ]
         )
         if topic.top_comment:
             lines.extend(
                 [
-                    f"**Community voice:** {topic.top_comment}",
+                    "**Community voice:** "
+                    + untrusted.sanitize_untrusted_text(
+                        topic.top_comment, limit=600, single_line=True
+                    ),
                     "",
                 ]
             )
         if topic.podcast_angle:
             lines.extend(
                 [
-                    f"**Podcast angle:** {topic.podcast_angle}",
+                    "**Podcast angle:** "
+                    + untrusted.sanitize_untrusted_text(
+                        topic.podcast_angle, limit=600, single_line=True
+                    ),
                     "",
                 ]
             )
         if topic.x_article_angle:
             lines.extend(
                 [
-                    f"**X article angle:** {topic.x_article_angle}",
+                    "**X article angle:** "
+                    + untrusted.sanitize_untrusted_text(
+                        topic.x_article_angle, limit=600, single_line=True
+                    ),
                     "",
                 ]
             )
@@ -200,14 +216,21 @@ def render_discovery(report: schema.DiscoveryReport) -> str:
             [
                 f"**Evidence:** {_format_discovery_engagement(topic.engagement_by_source)}",
                 "",
-                f"**Research next:** `{topic.command}`",
+                "**Research next:** `"
+                + untrusted.sanitize_untrusted_text(
+                    topic.command, limit=600, single_line=True
+                ).replace("`", "ˋ")
+                + "`",
                 "",
             ]
         )
 
     if report.warnings:
         lines.extend(["### Coverage notes", ""])
-        lines.extend(f"- {warning}" for warning in report.warnings)
+        lines.extend(
+            f"- {untrusted.sanitize_untrusted_text(warning, limit=600, single_line=True)}"
+            for warning in report.warnings
+        )
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"
 
@@ -229,6 +252,7 @@ SOURCE_LABELS = {
     "techmeme": "Techmeme",
     "trustpilot": "Trustpilot",
     "amazon": "Amazon",
+    "meta_ads": "Meta Ads",
     "perplexity": "Perplexity",
     "jobs": "Jobs",
     "corpus": "Your files",
@@ -281,12 +305,16 @@ def _render_drill_context(report: schema.Report) -> list[str]:
     return [
         "## Drill Follow-up",
         "",
-        f"- Target: {context.get('target') or report.drill_of}",
-        f"- Matched: {', '.join(titles)}",
+        f"- Target: {_safe_inline(context.get('target') or report.drill_of)}",
+        f"- Matched: {', '.join(_safe_inline(title) for title in titles)}",
         "",
         "### Original",
         "",
-        str(original),
+        _format_untrusted_evidence(
+            str(original),
+            3000,
+            continuation_indent="    ",
+        ),
         "",
         "### Deeper",
         "",
@@ -308,9 +336,17 @@ def _render_library_context(report: schema.Report) -> list[str]:
         "",
     ]
     for item in report.library_context:
-        detail = _truncate(item.summary or item.headline, 220)
+        topic = _escape_markdown_plain_text(_safe_title(item.topic))
+        published_date = untrusted.sanitize_untrusted_text(
+            item.published_date, limit=40, single_line=True
+        )
+        detail = untrusted.sanitize_untrusted_text(
+            _truncate(item.summary or item.headline, 220),
+            limit=220,
+            single_line=True,
+        )
         lines.append(
-            f"- You researched **{item.topic}** on {item.published_date} - "
+            f"- You researched **{topic}** on {published_date} - "
             f"key finding then: {detail}"
         )
     lines.append(library_index.LIBRARY_CONTEXT_END)
@@ -322,16 +358,17 @@ def render_library_search(
     matches: list[library_index.LibrarySearchMatch],
 ) -> str:
     """Render dated FTS matches grouped by the topic run that produced them."""
+    safe_query = _escape_markdown_plain_text(_safe_title(query))
     if not matches:
         return (
-            f"# Library search: {query}\n\n"
+            f"# Library search: {safe_query}\n\n"
             "No saved briefs or store sightings matched this query.\n"
         )
     groups: dict[tuple[str, date], list[library_index.LibrarySearchMatch]] = {}
     for match in matches:
         groups.setdefault(match.run_key, []).append(match)
     lines = [
-        f"# Library search: {query}",
+        f"# Library search: {safe_query}",
         "",
         _AI_SAFETY_NOTE,
         "",
@@ -339,7 +376,8 @@ def render_library_search(
         "",
     ]
     for (topic, published), run_matches in groups.items():
-        lines.extend([f"## {topic} - {published.isoformat()}", ""])
+        safe_topic = _escape_markdown_plain_text(_safe_title(topic))
+        lines.extend([f"## {safe_topic} - {published.isoformat()}", ""])
         for match in run_matches:
             label = "Saved brief" if match.source_kind == "brief" else "Store sighting"
             engagement = ""
@@ -347,12 +385,19 @@ def render_library_search(
                 engagement = (
                     f"; {_format_library_engagement(match.engagement)} engagement"
                 )
-            lines.append(f"- **{label}:** {match.headline}{engagement}")
+            headline = _escape_markdown_plain_text(_safe_title(match.headline))
+            lines.append(f"- **{label}:** {headline}{engagement}")
             if match.snippet and match.snippet != match.headline:
-                lines.append(f"  {match.snippet}")
+                snippet = untrusted.sanitize_untrusted_text(
+                    match.snippet, limit=1200, single_line=True
+                )
+                lines.append(f"  {snippet}")
             location = match.url or match.source_path
             if location:
-                lines.append(f"  Source: {location}")
+                safe_location = untrusted.sanitize_untrusted_text(
+                    location, limit=2000, single_line=True
+                )
+                lines.append(f"  Source: {_markdown_url_link(safe_location)}")
         lines.append("")
     return "\n".join(lines).strip() + "\n"
 
@@ -410,13 +455,13 @@ def _render_ranked_clusters(
         )
     for index, cluster in enumerate(solid_clusters, start=1):
         lines.append(
-            f"### {index}. {_format_untrusted_title(cluster.title)} "
+            f"### {index}. {_safe_title(cluster.title)} "
             f"(score {cluster.score:.0f}, {len(cluster.candidate_ids)} "
             f"item{'s' if len(cluster.candidate_ids) != 1 else ''}, "
             f"sources: {', '.join(_source_label(source) for source in cluster.sources)})"
         )
         if cluster.uncertainty:
-            lines.append(f"- Uncertainty: {cluster.uncertainty}")
+            lines.append(f"- Uncertainty: {_safe_warning(cluster.uncertainty)}")
         representative_ids = _qualifying_representative_ids(
             cluster,
             candidate_by_id,
@@ -430,6 +475,26 @@ def _render_ranked_clusters(
             )
         lines.append("")
     return lines
+
+
+def _auxiliary_candidate_pool(
+    report: schema.Report,
+    visible_clusters: list[schema.Cluster],
+    solid_clusters: list[schema.Cluster],
+) -> list[schema.Candidate]:
+    """Candidates for Best Takes and Top Community Comments.
+
+    Those sections are cross-cutting evidence surfaces, so they read every
+    cluster that clears the relevance floor, not only the ``cluster_limit``
+    clusters shown in ``## Ranked Evidence Clusters``: a 3,000-vote comment on
+    the thread in cluster eleven is exactly what the brief is for. The
+    nothing-solid gate is unchanged: when the visible set has clusters but
+    none clear the floor, the pool is empty.
+    """
+    if visible_clusters and not solid_clusters:
+        return []
+    all_solid = _clusters_clearing_relevance_floor(report, report.clusters)
+    return _candidates_for_auxiliary_sections(report, report.clusters, all_solid)
 
 
 def _clusters_clearing_relevance_floor(
@@ -535,15 +600,27 @@ def _render_corpus_section(report: schema.Report, limit: int = 8) -> list[str]:
         path = str((primary.metadata if primary else {}).get("relative_path") or "")
         published = primary.published_at if primary else None
         detail = f"modified {published}" if published else "modification date unknown"
+        # Corpus content sits inside the EVIDENCE FOR SYNTHESIS envelope, so it
+        # needs the engine-sentinel defanging every other evidence path gets
+        # (#1053) on top of the corpus-marker defanging. A local file is not
+        # automatically trustworthy input: it may have been downloaded, shared,
+        # or generated by someone else.
         lines.append(
-            f"- **{_format_untrusted_title(_defang_corpus_sentinels(candidate.title))}** "
+            f"- **{_defang_corpus_sentinels(_safe_title(candidate.title))}** "
             f"({detail}, relevance {candidate.final_score:.0f})"
         )
         if path:
-            lines.append(f"  - File: `{_defang_corpus_sentinels(path)}`")
+            lines.append(
+                f"  - File: `{_defang_corpus_sentinels(_safe_title(path))}`"
+            )
         if candidate.snippet:
             lines.append(
-                f"  - {_defang_corpus_sentinels(_truncate(candidate.snippet, 300))}"
+                "  - "
+                + _defang_corpus_sentinels(
+                    _format_untrusted_evidence(
+                        candidate.snippet, 300, continuation_indent="    "
+                    )
+                )
             )
     lines.append(PRIVATE_CORPUS_END)
     return lines
@@ -555,9 +632,47 @@ def _defang_corpus_sentinels(value: str) -> str:
     A note containing the literal end marker would otherwise close the block
     early, leaving later corpus snippets in publishable output.
     """
-    return _defang_engine_control(value).replace(
-        "LAST30DAYS_PRIVATE_CORPUS", "LAST30DAYS_PRIVATE-CORPUS"
+    return value.replace("LAST30DAYS_PRIVATE_CORPUS", "LAST30DAYS_PRIVATE-CORPUS")
+
+
+def _defang_engine_sentinels(value: str) -> str:
+    """Compatibility wrapper around the canonical untrusted-data boundary."""
+
+    return untrusted.sanitize_untrusted_text(value)
+
+
+def _safe_title(title: str) -> str:
+    """Render a scraped title as one defanged line.
+
+    On X, TikTok, Instagram and LinkedIn the title *is* the post body
+    (``normalize.py`` takes ``text[:140]``), and normalization only strips
+    the ends, so internal newlines survive. Unlike snippets, titles are
+    interpolated straight into engine-authored structure, so an unflattened
+    one can open its own markdown blocks or forge the sentinels above.
+    Collapsing whitespace first is what keeps the title on the line the
+    caller built for it.
+    """
+    return untrusted.sanitize_untrusted_title(title)
+
+
+def _safe_inline(value: object, *, limit: int = 600) -> str:
+    """Return one inert line for any data interpolated into renderer structure."""
+
+    return untrusted.sanitize_untrusted_text(
+        value,
+        limit=limit,
+        single_line=True,
     )
+
+
+def _safe_markdown_label(value: object, *, limit: int = 300) -> str:
+    """Return inert plain text for headings, table cells, and bracketed labels."""
+
+    return _escape_markdown_plain_text(_safe_inline(value, limit=limit))
+
+
+def _safe_warning(value: object) -> str:
+    return _safe_inline(value, limit=1200)
 
 
 _FRESHNESS_PRIORITY = {
@@ -590,21 +705,27 @@ def _render_freshness_verdicts(report: schema.Report) -> list[str]:
         "| --- | --- | --- | --- |",
     ]
     for verdict in report.freshness_verdicts:
-        claim = verdict.claim.replace("|", "\\|")
+        claim = _safe_inline(verdict.claim, limit=1200).replace("|", "\\|")
         if verdict.detail:
             # The verifier's detail carries the formatted movement for stale
             # rows and the reason a claim could not be re-checked otherwise.
-            claim += f" ({verdict.detail.replace('|', chr(92) + '|')})"
-        evidence_label = (
-            verdict.evidence_timestamp or verdict.source_timestamp or "source"
+            detail = _safe_inline(verdict.detail, limit=1200).replace(
+                "|", chr(92) + "|"
+            )
+            claim += f" ({detail})"
+        evidence_label = _safe_markdown_label(
+            verdict.evidence_timestamp or verdict.source_timestamp or "source",
+            limit=120,
         )
-        evidence = (
-            f"[{evidence_label}]({verdict.evidence_url})"
-            if verdict.evidence_url
-            else evidence_label
-        )
+        evidence = _markdown_url_link(verdict.evidence_url) if verdict.evidence_url else ""
+        if evidence:
+            evidence = f"{evidence_label}: {evidence}"
+        else:
+            evidence = evidence_label
+        verdict_label = _safe_markdown_label(verdict.verdict, limit=80)
+        checked_at = _safe_inline(verdict.checked_at, limit=120).replace("|", "\\|")
         lines.append(
-            f"| **{verdict.verdict}** | {claim} | {evidence} | {verdict.checked_at} |"
+            f"| **{verdict_label}** | {claim} | {evidence} | {checked_at} |"
         )
     return lines
 
@@ -648,12 +769,13 @@ def _render_registered_sections(
         solid_clusters,
     )
     no_solid_evidence = bool(visible_clusters) and not solid_clusters
+    aux_candidates = _auxiliary_candidate_pool(report, visible_clusters, solid_clusters)
     if no_solid_evidence:
         best_takes: list[str] = []
         top_comments: list[str] = []
     else:
         best_takes = _render_best_takes(
-            visible_candidates,
+            aux_candidates,
             limit=audience.budget_for("best_takes", int(fun_params["limit"])),
             threshold=float(fun_params["threshold"]),
             vote_weight=float(fun_params.get("vote_weight", 18.0)),
@@ -674,7 +796,7 @@ def _render_registered_sections(
         top_comments = _render_top_comments(
             report,
             limit=audience.budget_for("top_comments", 8),
-            candidates=visible_candidates,
+            candidates=aux_candidates,
         )
         if not top_comments:
             top_comments = [
@@ -700,7 +822,7 @@ def _render_registered_sections(
         "best_takes": best_takes,
         "top_comments": top_comments,
         "source_outcomes": _render_source_outcome_note(report),
-        "source_coverage": _render_source_coverage(report),
+        "source_coverage": _render_source_coverage(report, include_errors=False),
     }
     lines: list[str] = []
     for section_name in audience.section_order:
@@ -730,7 +852,7 @@ def render_compact(
     non_empty = [s for s, items in sorted(report.items_by_source.items()) if items]
     lines = [
         *_render_badge(),
-        f"# last30days v{_skill_version()}: {report.topic}",
+        f"# last30days v{_skill_version()}: {_safe_markdown_label(report.topic)}",
         "",
         *_assistant_safety_lines(),
         f"- Date range: {report.range_from} to {report.range_to}",
@@ -756,9 +878,10 @@ def render_compact(
             ]
         )
 
-    if report.warnings:
+    user_warnings = _warnings_without_source_failures(report.warnings)
+    if user_warnings:
         lines.append("## Warnings")
-        lines.extend(f"- {warning}" for warning in report.warnings)
+        lines.extend(f"- {_safe_warning(warning)}" for warning in user_warnings)
         lines.append("")
 
     # LAW 7 backstop: emit the DEGRADED RUN WARNING block BEFORE the evidence
@@ -794,6 +917,9 @@ def render_compact(
         solid_clusters,
     )
     no_solid_evidence = bool(visible_clusters) and not solid_clusters
+    aux_candidates = _auxiliary_candidate_pool(
+        evidence_report, visible_clusters, solid_clusters
+    )
     hiring_block = (
         []
         if no_solid_evidence
@@ -814,7 +940,7 @@ def render_compact(
 
         if not no_solid_evidence:
             best_takes = _render_best_takes(
-                visible_candidates,
+                aux_candidates,
                 limit=fun_params["limit"],
                 threshold=fun_params["threshold"],
                 vote_weight=fun_params.get("vote_weight", 18.0),
@@ -824,7 +950,7 @@ def render_compact(
 
             top_comments = _render_top_comments(
                 evidence_report,
-                candidates=visible_candidates,
+                candidates=aux_candidates,
             )
             if top_comments:
                 lines.extend([""] + top_comments)
@@ -833,7 +959,7 @@ def render_compact(
         if outcome_note:
             lines.extend([""] + outcome_note)
 
-        lines.extend(_render_source_coverage(report))
+        lines.extend(_render_source_coverage(report, include_errors=False))
     else:
         lines.extend(
             _render_registered_sections(
@@ -920,8 +1046,9 @@ def render_for_html(
         candidates=html_candidates if evidence_report.clusters else None,
     )
     if synthesis_md:
-        lines.extend(["", synthesis_md.strip()])
-        if hiring_block and "## Hiring Signals" not in synthesis_md:
+        safe_synthesis = untrusted.sanitize_synthesized_markdown(synthesis_md)
+        lines.extend(["", safe_synthesis])
+        if hiring_block and "## Hiring Signals" not in safe_synthesis:
             lines.extend(["", *hiring_block])
     elif hiring_block and audience.name in {"default", "eli5"}:
         lines.extend(["", *hiring_block])
@@ -968,7 +1095,7 @@ def render_for_html_comparison(
     if not entity_reports:
         raise ValueError("render_for_html_comparison requires at least one report")
 
-    entities = [label for label, _ in entity_reports]
+    entities = [_safe_markdown_label(label) for label, _ in entity_reports]
     main_report = entity_reports[0][1]
     meta = (
         f"<!-- META: {main_report.range_from} to {main_report.range_to} "
@@ -979,14 +1106,17 @@ def render_for_html_comparison(
         meta,
     ]
     if synthesis_md:
-        lines.extend(["", synthesis_md.strip()])
+        lines.extend(
+            ["", untrusted.sanitize_synthesized_markdown(synthesis_md)]
+        )
     for label, report in entity_reports:
+        safe_label = _safe_markdown_label(label)
         freshness_verdicts = _render_freshness_verdicts(report)
         if freshness_verdicts:
-            lines.extend(["", f"## {label}", "", *freshness_verdicts])
+            lines.extend(["", f"## {safe_label}", "", *freshness_verdicts])
         corpus_section = _render_corpus_section(report)
         if corpus_section:
-            lines.extend(["", f"## {label}", "", *corpus_section])
+            lines.extend(["", f"## {safe_label}", "", *corpus_section])
     # Comparison data quality notes also go to stderr, not into the artifact.
     _append_html_footer(lines, main_report, save_path)
     return "\n".join(lines).strip() + "\n"
@@ -1011,7 +1141,7 @@ def collect_html_warnings(report: schema.Report) -> list[str]:
     freshness_warning = _assess_data_freshness(report)
     if freshness_warning:
         notes.append(freshness_warning)
-    notes.extend(report.warnings)
+    notes.extend(_safe_warning(warning) for warning in report.warnings)
     return _dedupe_notes(notes)
 
 
@@ -1022,7 +1152,7 @@ def collect_html_warnings_comparison(
     notes: list[str] = []
     for label, report in entity_reports:
         for w in collect_html_warnings(report):
-            notes.append(f"{label}: {w}")
+            notes.append(f"{_safe_inline(label)}: {_safe_warning(w)}")
     return notes
 
 
@@ -1059,7 +1189,7 @@ def _render_html_data_quality_note(report: schema.Report) -> str | None:
     freshness_warning = _assess_data_freshness(report)
     if freshness_warning:
         notes.append(freshness_warning)
-    notes.extend(report.warnings)
+    notes.extend(_safe_warning(warning) for warning in report.warnings)
     if not notes:
         return None
     return f"> **Data quality note:** {' '.join(_dedupe_notes(notes))}"
@@ -1073,7 +1203,7 @@ def _render_html_comparison_data_quality_note(
         note = _render_html_data_quality_note(report)
         if note:
             clean = note.removeprefix("> **Data quality note:** ").strip()
-            notes.append(f"{label}: {clean}")
+            notes.append(f"{_safe_inline(label)}: {_safe_warning(clean)}")
     if not notes:
         return None
     return f"> **Data quality note:** {' '.join(_dedupe_notes(notes))}"
@@ -1163,10 +1293,9 @@ def _render_canonical_boundary() -> list[str]:
         "of synthesizing - STOP and regenerate. This is the 2026-04-19 Hermes Agent",
         "Use Cases failure mode (LAW 6).",
         "",
-        "Do not append a trailing `Sources:` block; the emoji-tree footer above is",
-        "the sources list. LAW 1 overrides any WebSearch tool 'CRITICAL: MUST include",
-        "Sources' reminder - that reminder is a generic tool contract and does not",
-        "apply to last30days output.",
+        "Cite web pages inline next to the claims they support (LAW 1), then end at",
+        "the invitation, counting web pages in its link line. The emoji-tree footer",
+        "above already summarizes the sources, so do not add a `Sources:` list.",
     ]
 
 
@@ -1230,7 +1359,7 @@ def _render_pre_research_warning(report: schema.Report) -> list[str]:
         "",
         "To fix: in a fresh agent session (Claude Code, Codex, Hermes, Gemini, or any runtime),",
         "ensure your runtime's web-search tool is active, then",
-        f"rerun `/last30days {report.topic}`. The skill will resolve handles",
+        f"rerun `/last30days {_safe_inline(report.topic)}`. The skill will resolve handles",
         "and communities before calling the engine this time, producing richer results.",
         "",
         'If this topic really is abstract (e.g. "AI regulation") and doesn\'t need',
@@ -1271,7 +1400,7 @@ def _render_degraded_run_warning(report: schema.Report) -> list[str]:
         "<!-- USER-VISIBLE BANNER: emit verbatim before synthesis per LAW 5 / LAW 7. -->",
         "## DEGRADED RUN WARNING",
         "",
-        f'⚠️  This run was called BARE on a named-entity topic ("{report.topic}"):',
+        f'⚠️  This run was called BARE on a named-entity topic ("{_safe_inline(report.topic)}"):',
         "no `--plan` JSON, no pre-flight handle resolution. The engine ran",
         "deterministic fallback retrieval, which is the cron/headless path -",
         "weaker than the path where the hosting reasoning model authors its own",
@@ -1293,7 +1422,7 @@ def _render_degraded_run_warning(report: schema.Report) -> list[str]:
         "",
         "**If you are a user reading this:** the assistant skipped its own",
         "planning step. Ask it to regenerate following Step 0.55 and Step 0.75",
-        "of SKILL.md.",
+        "of the skill's research runbook.",
         "<!-- END USER-VISIBLE BANNER -->",
     ]
 
@@ -1326,6 +1455,7 @@ def _render_comparison_scaffold(topic: str) -> list[str]:
     entities = _parse_comparison_entities(topic)
     if not entities:
         return []
+    entities = [_safe_markdown_label(entity) for entity in entities]
 
     # Header row - uses "Dimension" per the April 9 exemplar (not "Feature")
     header = "| Dimension | " + " | ".join(entities) + " |"
@@ -1363,7 +1493,7 @@ def _render_comparison_scaffold(topic: str) -> list[str]:
         separator,
         *body,
         "",
-        "After the table, write the Bottom Line section with one Choose-X-if paragraph per entity, then the emerging stack paragraph. See the comparison template in SKILL.md for the full structure.",
+        "After the table, write the Bottom Line section with one Choose-X-if paragraph per entity, then the emerging stack paragraph. See the comparison template in the skill's references/comparison.md for the full structure.",
     ]
 
 
@@ -1392,7 +1522,7 @@ def render_comparison_multi(
     if not entity_reports:
         raise ValueError("render_comparison_multi requires at least one report")
 
-    entities = [label for label, _ in entity_reports]
+    entities = [_safe_markdown_label(label) for label, _ in entity_reports]
     main_label, main_report = entity_reports[0]
     synthesized_topic = " vs ".join(entities)
 
@@ -1408,7 +1538,10 @@ def render_comparison_multi(
 
     aggregated_warnings: list[str] = []
     for label, report in entity_reports:
-        aggregated_warnings.extend(f"[{label}] {w}" for w in report.warnings)
+        safe_label = _safe_markdown_label(label)
+        aggregated_warnings.extend(
+            f"[{safe_label}] {_safe_warning(w)}" for w in report.warnings
+        )
     if aggregated_warnings:
         lines.append("## Warnings")
         lines.extend(f"- {w}" for w in aggregated_warnings)
@@ -1431,7 +1564,7 @@ def render_comparison_multi(
     for label, report in entity_reports:
         lines.extend(
             _render_entity_evidence_block(
-                label=label,
+                label=_safe_markdown_label(label),
                 report=report,
                 cluster_limit=cluster_limit,
                 fun_params=fun_params,
@@ -1444,7 +1577,9 @@ def render_comparison_multi(
     for label, report in entity_reports:
         freshness_verdicts = _render_freshness_verdicts(report)
         if freshness_verdicts:
-            lines.extend([f"## {label}", "", *freshness_verdicts, ""])
+            lines.extend(
+                [f"## {_safe_markdown_label(label)}", "", *freshness_verdicts, ""]
+            )
 
     # Reuse the existing comparison scaffold by feeding it the synthesized
     # topic. _parse_comparison_entities splits on " vs " so the scaffold
@@ -1486,11 +1621,16 @@ def _render_resolved_entities_block(
     out: list[str] = ["## Resolved Entities", ""]
     for label, report in entity_reports:
         resolved = report.artifacts.get("resolved") or {}
-        x_handle = resolved.get("x_handle") or ""
-        subs = resolved.get("subreddits") or []
-        gh_user = resolved.get("github_user") or ""
-        gh_repos = resolved.get("github_repos") or []
-        context = resolved.get("context") or ""
+        safe_label = _safe_markdown_label(label)
+        x_handle = _safe_inline(resolved.get("x_handle") or "", limit=120)
+        subs = [
+            _safe_inline(sub, limit=120) for sub in (resolved.get("subreddits") or [])
+        ]
+        gh_user = _safe_inline(resolved.get("github_user") or "", limit=120)
+        gh_repos = [
+            _safe_inline(repo, limit=240) for repo in (resolved.get("github_repos") or [])
+        ]
+        context = _safe_inline(resolved.get("context") or "", limit=120)
 
         x_display = f"@{x_handle}" if x_handle else "-"
         subs_display = (
@@ -1508,10 +1648,10 @@ def _render_resolved_entities_block(
                 + (f" +{len(gh_repos) - 3}" if len(gh_repos) > 3 else "")
                 + ")"
             )
-        context_display = _truncate(context, 120) if context else "-"
+        context_display = context if context else "-"
 
         out.append(
-            f"- **{label}**: X {x_display} | Subs {subs_display} | "
+            f"- **{safe_label}**: X {x_display} | Subs {subs_display} | "
             f"GitHub {gh_display} | Context: {context_display}"
         )
     return out
@@ -1532,7 +1672,7 @@ def _render_entity_evidence_block(
         evidence_report,
         requested_clusters,
     )
-    out: list[str] = [f"## {label}", ""]
+    out: list[str] = [f"## {_safe_markdown_label(label)}", ""]
 
     if not evidence_report.clusters:
         out.append("(no significant discussion this month)")
@@ -1556,13 +1696,13 @@ def _render_entity_evidence_block(
         )
     for index, cluster in enumerate(visible_clusters, start=1):
         out.append(
-            f"#### {index}. {_format_untrusted_title(cluster.title)} "
+            f"#### {index}. {_safe_title(cluster.title)} "
             f"(score {cluster.score:.0f}, {len(cluster.candidate_ids)} item"
             f"{'s' if len(cluster.candidate_ids) != 1 else ''}, "
             f"sources: {', '.join(_source_label(s) for s in cluster.sources)})"
         )
         if cluster.uncertainty:
-            out.append(f"- Uncertainty: {cluster.uncertainty}")
+            out.append(f"- Uncertainty: {_safe_warning(cluster.uncertainty)}")
         representative_ids = _qualifying_representative_ids(
             cluster,
             candidate_by_id,
@@ -1609,7 +1749,7 @@ def render_comparison_multi_context(
     if not entity_reports:
         raise ValueError("render_comparison_multi_context requires at least one report")
 
-    entities = [label for label, _ in entity_reports]
+    entities = [_safe_markdown_label(label) for label, _ in entity_reports]
     lines = [
         f"Comparison: {' vs '.join(entities)}",
         f"Entities: {len(entities)}",
@@ -1620,6 +1760,19 @@ def render_comparison_multi_context(
     if resolved_block:
         lines.extend(resolved_block)
         lines.append("")
+    # render_context surfaces warnings for a single-entity run; omitting them
+    # here left context mode the one supported output where a dropped entity
+    # or a failed source is invisible. Placed above the per-entity sections so
+    # it survives tail truncation, matching render_comparison_multi.
+    aggregated_warnings = [
+        f"[{_safe_markdown_label(label)}] {_safe_warning(warning)}"
+        for label, report in entity_reports
+        for warning in report.warnings
+    ]
+    if aggregated_warnings:
+        lines.append("Warnings:")
+        lines.extend(f"- {warning}" for warning in aggregated_warnings)
+        lines.append("")
     for label, report in entity_reports:
         evidence_report = schema.without_sources(report, {"corpus"})
         requested_clusters = evidence_report.clusters[:cluster_limit]
@@ -1627,8 +1780,8 @@ def render_comparison_multi_context(
             evidence_report,
             requested_clusters,
         )
-        lines.append(f"## {label}")
-        lines.append(f"Intent: {report.query_plan.intent}")
+        lines.append(f"## {_safe_markdown_label(label)}")
+        lines.append(f"Intent: {_safe_inline(report.query_plan.intent)}")
         if not evidence_report.clusters:
             lines.append("- (no significant discussion this month)")
         elif not visible_clusters:
@@ -1636,7 +1789,7 @@ def render_comparison_multi_context(
         else:
             for cluster in visible_clusters:
                 lines.append(
-                    f"- {_format_untrusted_title(cluster.title)} "
+                    f"- {_safe_title(cluster.title)} "
                     f"[{', '.join(_source_label(s) for s in cluster.sources)}]"
                 )
         corpus_section = _render_corpus_section(report)
@@ -1715,6 +1868,18 @@ def _markdown_url_link(url: str) -> str:
     return _escape_markdown_plain_text(sanitized_url)
 
 
+def _markdown_labeled_link(label: object, url: object) -> str:
+    """Render a safe labeled link without trusting either input."""
+
+    safe_label = _safe_markdown_label(label)
+    raw_url = str(url or "")
+    rendered_url = _markdown_url_link(raw_url)
+    sanitized_url = _sanitize_url_for_single_line_output(raw_url)
+    if rendered_url == f"[{sanitized_url}]({sanitized_url})":
+        return f"[{safe_label}]({sanitized_url})"
+    return f"{safe_label}: {rendered_url}" if rendered_url else safe_label
+
+
 def render_full(report: schema.Report, save_path: str | None = None) -> str:
     """Full data dump: ALL clusters + ALL items by source. For saved files and debugging.
 
@@ -1725,7 +1890,7 @@ def render_full(report: schema.Report, save_path: str | None = None) -> str:
     # Start with the same header as compact
     non_empty = [s for s, items in sorted(report.items_by_source.items()) if items]
     lines = [
-        f"# last30days v{_skill_version()}: {report.topic}",
+        f"# last30days v{_skill_version()}: {_safe_markdown_label(report.topic)}",
         "",
         *_assistant_safety_lines(),
         f"- Date range: {report.range_from} to {report.range_to}",
@@ -1737,7 +1902,7 @@ def render_full(report: schema.Report, save_path: str | None = None) -> str:
 
     if report.warnings:
         lines.append("## Warnings")
-        lines.extend(f"- {warning}" for warning in report.warnings)
+        lines.extend(f"- {_safe_warning(warning)}" for warning in report.warnings)
         lines.append("")
 
     library_context = _render_library_context(report)
@@ -1820,16 +1985,22 @@ def render_full(report: schema.Report, save_path: str | None = None) -> str:
         lines.append("")
         for item in items:
             score = item.local_rank_score if item.local_rank_score is not None else 0
-            lines.append(
-                f"**{item.item_id}** (score:{score:.0f}) {item.author or ''} ({item.published_at or 'date unknown'}) [{_format_item_engagement(item)}]"
+            safe_item_id = _safe_inline(item.item_id, limit=240)
+            safe_author = _safe_inline(item.author or "", limit=240)
+            safe_published = _safe_inline(
+                item.published_at or "date unknown", limit=120
             )
-            lines.append(f"  {_format_untrusted_title(item.title)}")
+            lines.append(
+                f"**{safe_item_id}** (score:{score:.0f}) {safe_author} "
+                f"({safe_published}) [{_safe_inline(_format_item_engagement(item), limit=600)}]"
+            )
+            lines.append(f"  {_safe_title(item.title)}")
             if item.url:
                 rendered_url = _markdown_url_link(item.url)
                 if rendered_url:
                     lines.append(f"  {rendered_url}")
             if item.container:
-                lines.append(f"  *{item.container}*")
+                lines.append(f"  *{_safe_inline(item.container, limit=240)}*")
             if item.snippet:
                 lines.append(
                     f"  {_format_untrusted_evidence(item.snippet, 500, continuation_indent='  ')}"
@@ -1887,7 +2058,7 @@ def render_full(report: schema.Report, save_path: str | None = None) -> str:
             if outcome_prices and item.source == "polymarket":
                 question = item.metadata.get("question") or ""
                 if question and question != item.title:
-                    lines.append(f"  Question: {_format_untrusted_title(question)}")
+                    lines.append(f"  Question: {_safe_inline(question, limit=600)}")
                 odds_parts = []
                 for name, price in outcome_prices:
                     if isinstance(price, (int, float)):
@@ -1896,7 +2067,7 @@ def render_full(report: schema.Report, save_path: str | None = None) -> str:
                             if price >= 0.1
                             else f"{price * 100:.1f}%"
                         )
-                        odds_parts.append(f"{_format_untrusted_title(str(name))}: {pct}")
+                        odds_parts.append(f"{_safe_inline(name, limit=240)}: {pct}")
                 if odds_parts:
                     lines.append(f"  Odds: {' | '.join(odds_parts)}")
                 remaining = item.metadata.get("outcomes_remaining") or 0
@@ -1904,7 +2075,7 @@ def render_full(report: schema.Report, save_path: str | None = None) -> str:
                     lines.append(f"  (+{remaining} more outcomes)")
                 end_date = item.metadata.get("end_date")
                 if end_date:
-                    lines.append(f"  Closes: {end_date}")
+                    lines.append(f"  Closes: {_safe_inline(end_date, limit=120)}")
             lines.append("")
 
     corpus_section = _render_corpus_section(report)
@@ -1974,8 +2145,8 @@ def render_context(report: schema.Report, cluster_limit: int = 6) -> str:
     )
     no_solid_evidence = bool(requested_clusters) and not visible_clusters
     lines = [
-        f"Topic: {report.topic}",
-        f"Intent: {report.query_plan.intent}",
+        f"Topic: {_safe_inline(report.topic)}",
+        f"Intent: {_safe_inline(report.query_plan.intent)}",
         _AI_SAFETY_NOTE,
     ]
     drill_context = _render_drill_context(report)
@@ -2007,7 +2178,7 @@ def render_context(report: schema.Report, cluster_limit: int = 6) -> str:
         lines.append("- Nothing solid this window.")
     for cluster in visible_clusters:
         lines.append(
-            f"- {_format_untrusted_title(cluster.title)} [{', '.join(_source_label(source) for source in cluster.sources)}]"
+            f"- {_safe_title(cluster.title)} [{', '.join(_source_label(source) for source in cluster.sources)}]"
         )
         for candidate_id in _qualifying_representative_ids(
             cluster,
@@ -2018,10 +2189,13 @@ def render_context(report: schema.Report, cluster_limit: int = 6) -> str:
             if not candidate:
                 continue
             detail_parts = [
-                schema.candidate_source_label(candidate),
-                _format_untrusted_title(candidate.title),
-                schema.candidate_best_published_at(candidate) or "date unknown",
-                candidate.url,
+                _safe_inline(schema.candidate_source_label(candidate), limit=120),
+                _safe_inline(candidate.title),
+                _safe_inline(
+                    schema.candidate_best_published_at(candidate) or "date unknown",
+                    limit=120,
+                ),
+                _safe_inline(candidate.url, limit=2000),
             ]
             lines.append(f"  - {' | '.join(detail_parts)}")
             if candidate.snippet:
@@ -2034,11 +2208,13 @@ def render_context(report: schema.Report, cluster_limit: int = 6) -> str:
         lines.extend(["", *corpus_section])
     if report.warnings:
         lines.append("Warnings:")
-        lines.extend(f"- {warning}" for warning in report.warnings)
+        lines.extend(f"- {_safe_warning(warning)}" for warning in report.warnings)
     if report.freshness_verdicts:
         lines.append("Freshness verdicts:")
         lines.extend(
-            f"- {verdict.verdict}: {verdict.claim} ({verdict.evidence_url or verdict.source_url})"
+            f"- {_safe_inline(verdict.verdict, limit=80)}: "
+            f"{_safe_inline(verdict.claim, limit=1200)} "
+            f"({_safe_inline(verdict.evidence_url or verdict.source_url, limit=2000)})"
             for verdict in report.freshness_verdicts
         )
     return "\n".join(lines).strip() + "\n"
@@ -2055,7 +2231,7 @@ def render_brief(report: schema.Report, cluster_limit: int = 8) -> str:
     evidence_report = schema.without_sources(report, {"corpus"})
     non_empty = [s for s, items in sorted(report.items_by_source.items()) if items]
     lines = [
-        f"# Production Brief: {report.topic}",
+        f"# Production Brief: {_safe_markdown_label(report.topic)}",
         "",
         *_assistant_safety_lines(),
         f"- Date range: {report.range_from} to {report.range_to}",
@@ -2094,10 +2270,12 @@ def render_brief(report: schema.Report, cluster_limit: int = 8) -> str:
     for i, cluster in enumerate(visible_clusters, start=1):
         source_tags = ", ".join(_source_label(s) for s in cluster.sources)
         qualifier = (
-            f" [{cluster.uncertainty.replace('-', ' ')}]" if cluster.uncertainty else ""
+            f" [{_safe_inline(cluster.uncertainty.replace('-', ' '), limit=240)}]"
+            if cluster.uncertainty
+            else ""
         )
         lines.append(
-            f"### {i}. {_format_untrusted_title(cluster.title)} (score {cluster.score:.0f}, {source_tags}){qualifier}"
+            f"### {i}. {_safe_title(cluster.title)} (score {cluster.score:.0f}, {source_tags}){qualifier}"
         )
         for cid in _qualifying_representative_ids(
             cluster,
@@ -2132,20 +2310,24 @@ def render_brief(report: schema.Report, cluster_limit: int = 8) -> str:
             primary = schema.candidate_primary_item(candidate)
             author = primary.author if primary else None
             if author and candidate.source in ("x", "tiktok", "instagram", "threads"):
-                attribution = f"@{author} on {source_label}"
+                attribution = f"@{_safe_inline(author, limit=240)} on {source_label}"
             elif author and candidate.source == "reddit":
                 container = primary.container if primary else None
-                attribution = f"r/{container}" if container else "Reddit"
+                attribution = (
+                    f"r/{_safe_inline(container, limit=240)}" if container else "Reddit"
+                )
             else:
                 attribution = source_label
+            fun_explanation = untrusted.bounded_untrusted_explanation(
+                candidate.fun_explanation
+            )
             reason = (
-                f" — {candidate.fun_explanation}"
-                if candidate.fun_explanation
-                and candidate.fun_explanation != "heuristic-fallback"
+                f" — {fun_explanation}"
+                if fun_explanation and fun_explanation != "heuristic-fallback"
                 else ""
             )
             lines.append(
-                f'- "{_format_untrusted_title(candidate.title, 200)}"'
+                f'- "{_truncate(_safe_title(candidate.title), 200)}"'
                 f" ({attribution}, fun:{candidate.fun_score:.0f}){reason}"
             )
         lines.append("")
@@ -2156,12 +2338,15 @@ def render_brief(report: schema.Report, cluster_limit: int = 8) -> str:
         lines.append("")
         for cluster in tensions[:cluster_limit]:
             label = (
-                cluster.uncertainty.replace("-", " ").title()
+                _safe_inline(
+                    cluster.uncertainty.replace("-", " ").title(),
+                    limit=240,
+                )
                 if cluster.uncertainty
                 else ""
             )
             source_tags = ", ".join(_source_label(s) for s in cluster.sources)
-            lines.append(f"- **{_format_untrusted_title(cluster.title)}** [{label}]: {source_tags}")
+            lines.append(f"- **{_safe_title(cluster.title)}** [{label}]: {source_tags}")
         lines.append("")
 
     questions = _extract_audience_questions(qualifying_candidates)
@@ -2169,14 +2354,14 @@ def render_brief(report: schema.Report, cluster_limit: int = 8) -> str:
         lines.append("## Audience Questions")
         lines.append("")
         for q in questions[:8]:
-            lines.append(f"- {q}")
+            lines.append(f"- {_safe_inline(q)}")
         lines.append("")
 
     lines.append("## Source Clusters")
     lines.append("")
     for cluster in visible_clusters:
         source_tags = " + ".join(_source_label(s) for s in cluster.sources)
-        lines.append(f"- **{_format_untrusted_title(cluster.title)}**: {source_tags}")
+        lines.append(f"- **{_safe_title(cluster.title)}**: {source_tags}")
     lines.append("")
 
     corpus_section = _render_corpus_section(report)
@@ -2197,7 +2382,7 @@ def _extract_audience_questions(candidates: list[schema.Candidate]) -> list[str]
     questions: list[str] = []
     seen: set[str] = set()
     for candidate in candidates:
-        title = _format_untrusted_title(candidate.title)
+        title = candidate.title.strip()
         if not title:
             continue
         if title.endswith("?"):
@@ -2217,12 +2402,36 @@ def _render_hiring_signals(
     if not isinstance(summary, dict):
         return []
     mode = summary.get("mode") or "standard"
-    if candidates is not None:
-        job_items: dict[str, schema.SourceItem] = {}
-        for candidate in candidates:
+    rejected_jobs = set(summary.get("rejected_job_keys") or [])
+    if candidates is not None or rejected_jobs:
+        solid_clusters = _clusters_clearing_relevance_floor(report, report.clusters)
+        accepted = _candidates_for_auxiliary_sections(
+            report, report.clusters, solid_clusters,
+        )
+        accepted_ids = {
+            candidate.candidate_id for candidate in accepted
+            if _best_take_relevance_ok(candidate)
+        }
+        rejected_jobs.update(
+            fusion.candidate_key(item)
+            for candidate in report.ranked_candidates
+            if candidate.candidate_id not in accepted_ids
+            for item in candidate.source_items
+            if item.source == "jobs"
+        )
+        # Board size and rare-role signals must survive the ranking pool and
+        # display limits, while explicitly rejected evidence stays excluded.
+        job_items = {
+            fusion.candidate_key(item): item
+            for item in report.items_by_source.get("jobs", [])
+            if fusion.candidate_key(item) not in rejected_jobs
+        }
+        for candidate in accepted:
+            if candidate.candidate_id not in accepted_ids:
+                continue
             for item in candidate.source_items:
                 if item.source == "jobs":
-                    job_items[item.item_id] = item
+                    job_items[fusion.candidate_key(item)] = item
         if not job_items:
             return []
         summary = hiring_signals.analyze(
@@ -2239,13 +2448,13 @@ def _render_hiring_signals(
         "## Hiring Signals",
         "",
         (
-            f"- Mode: {mode}; company-size tier: "
-            f"{summary.get('company_size_tier') or 'unknown'}"
+            f"- Mode: {_safe_inline(mode, limit=80)}; company-size tier: "
+            f"{_safe_inline(summary.get('company_size_tier') or 'unknown', limit=120)}"
         ),
     ]
     if not signals:
         reason = summary.get("omitted_reason") or "no reliable hiring signal found"
-        out.append(f"- No reliable hiring signal found: {reason}.")
+        out.append(f"- No reliable hiring signal found: {_safe_warning(reason)}.")
         return out
 
     out.append(
@@ -2254,17 +2463,17 @@ def _render_hiring_signals(
     for signal in signals[:4]:
         evidence = signal.get("evidence") or []
         out.append(
-            f"- {signal.get('theme', 'hiring theme')}: "
-            f"{signal.get('interpretation', 'possible hiring focus')} "
-            f"(confidence: {signal.get('confidence', 'low')}; "
+            f"- {_safe_inline(signal.get('theme', 'hiring theme'))}: "
+            f"{_safe_inline(signal.get('interpretation', 'possible hiring focus'), limit=1200)} "
+            f"(confidence: {_safe_inline(signal.get('confidence', 'low'), limit=80)}; "
             f"evidence: {signal.get('evidence_count', len(evidence))} roles)"
         )
         for item in evidence[:3]:
-            title = _format_untrusted_title(item.get("title") or "Job posting")
+            title = item.get("title") or "Job posting"
             url = item.get("url") or ""
-            dept = item.get("department") or ""
-            date = item.get("published_at") or "date unknown"
-            link = f"[{title}]({url})" if url else title
+            dept = _safe_inline(item.get("department") or "", limit=240)
+            date = _safe_inline(item.get("published_at") or "date unknown", limit=120)
+            link = _markdown_labeled_link(title, url)
             detail = " | ".join(part for part in [dept, date] if part)
             out.append(f"  - {link}" + (f" ({detail})" if detail else ""))
 
@@ -2277,13 +2486,15 @@ def _render_hiring_signals(
             'distinguish "new bets" from "doubling down"):'
         )
         for cand in strategic[:8]:
-            title = _format_untrusted_title(cand.get("title") or "Job posting")
+            title = cand.get("title") or "Job posting"
             url = cand.get("url") or ""
-            flags = ", ".join(cand.get("flags") or [])
-            dept = cand.get("department") or ""
-            location = cand.get("location") or ""
-            date = cand.get("published_at") or "date unknown"
-            link = f"[{title}]({url})" if url else title
+            flags = ", ".join(
+                _safe_inline(flag, limit=120) for flag in (cand.get("flags") or [])
+            )
+            dept = _safe_inline(cand.get("department") or "", limit=240)
+            location = _safe_inline(cand.get("location") or "", limit=240)
+            date = _safe_inline(cand.get("published_at") or "date unknown", limit=120)
+            link = _markdown_labeled_link(title, url)
             detail = " | ".join(part for part in [dept, location, date] if part)
             tag = f" [{flags}]" if flags else ""
             out.append(f"  - {link}{tag}" + (f" ({detail})" if detail else ""))
@@ -2312,7 +2523,8 @@ def _render_candidate(
         detail_parts.append("interaction:→@" + ",@".join(interaction_targets[:2]))
     details = " | ".join(part for part in detail_parts if part)
     lines = [
-        f"{prefix} [{schema.candidate_source_label(candidate)}] {_format_untrusted_title(candidate.title)}"
+        f"{prefix} [{_safe_inline(schema.candidate_source_label(candidate), limit=120)}] "
+        f"{_safe_title(candidate.title)}"
         + (_candidate_freshness_flag(report, candidate.candidate_id) if report else ""),
         f"   - {details}",
     ]
@@ -2425,7 +2637,7 @@ def _shorten_polymarket_title(title: str) -> str:
     # Drop a leading article so the descriptor doesn't read "an Anthropic Claude..."
     t = re.sub(r"^(?:a|an|the)\s+", "", t, flags=re.IGNORECASE)
 
-    return t
+    return _safe_inline(t, limit=80)
 
 
 def _polymarket_top_markets(
@@ -2468,7 +2680,7 @@ def _polymarket_top_markets(
         # empty, a binary Yes/No proxy, a bare article ("an"/"the"), or already the
         # leading token of the descriptor — appending it then yields noise like
         # "...score at: an 19%" or a doubled token.
-        label = (lead_name or "").strip()
+        label = _safe_inline(lead_name or "", limit=120)
         descriptor_lead = descriptor.split()[0].lower() if descriptor.split() else ""
         redundant = (
             not label
@@ -2483,7 +2695,29 @@ def _polymarket_top_markets(
     return summaries
 
 
-def _render_source_coverage(report: schema.Report) -> list[str]:
+# Warnings that only restate a per-source outcome. The compact (model-facing)
+# stdout carries those through ## Partial Coverage, and the user-facing
+# footer carries counts only; doctor --postmortem, the saved raw file, and
+# --emit=json keep the full list.
+_SOURCE_FAILURE_WARNING_PREFIXES = (
+    "Some sources failed",
+    "Some sources returned partial results",
+)
+
+
+def _warnings_without_source_failures(warnings: list[str]) -> list[str]:
+    return [
+        warning
+        for warning in warnings
+        if not warning.startswith(_SOURCE_FAILURE_WARNING_PREFIXES)
+    ]
+
+
+def _render_source_coverage(
+    report: schema.Report,
+    *,
+    include_errors: bool = True,
+) -> list[str]:
     lines = [
         "## Source Coverage",
         "",
@@ -2496,12 +2730,12 @@ def _render_source_coverage(report: schema.Report) -> list[str]:
         if outcome and outcome.state != health.OK:
             line += f" ({_format_outcome(outcome)})"
         lines.append(line)
-    if report.errors_by_source:
+    if include_errors and report.errors_by_source:
         lines.append("")
         lines.append("## Source Errors")
         lines.append("")
         for source, error in sorted(report.errors_by_source.items()):
-            lines.append(f"- {_source_label(source)}: {error}")
+            lines.append(f"- {_source_label(source)}: {_safe_warning(error)}")
     return lines
 
 
@@ -2528,15 +2762,25 @@ def _render_source_outcome_note(report: schema.Report) -> list[str]:
 
 
 def _format_outcome(outcome: schema.SourceOutcome) -> str:
-    detail = " ".join((outcome.detail or "").split())
+    detail = _safe_inline(outcome.detail or "", limit=500)
     if len(detail) > 140:
         detail = detail[:137].rstrip() + "..."
     state = outcome.state
     if state == schema.PARTIAL:
         noun = "item" if outcome.items_returned == 1 else "items"
-        summary = f"partial after {outcome.items_returned} {noun}"
+        summary = f"partial — {outcome.items_returned} {noun} returned"
+        detail_l = detail.lower()
+        if (
+            "429" in detail_l
+            or "rate-limited" in detail_l
+            or "rate limit" in detail_l
+            or "too many requests" in detail_l
+        ):
+            summary += ", some requests rate-limited"
     elif state == schema.NO_RESULTS:
         summary = "no results"
+    elif state == schema.PAYMENT_REQUIRED:
+        summary = health.credits_exhausted_label(outcome.source)
     else:
         summary = state
     if detail:
@@ -2797,11 +3041,15 @@ def _build_source_footer_lines(report: schema.Report) -> list[str]:
                 )
             )
             parts.append(f"{with_transcripts}/{len(items)} with transcripts")
+        provenance = report.artifacts.get("x_provenance") if source_key == "x" else None
+        if provenance in x_envelope.PROVENANCE_LABELS:
+            # Host-fetched X names its lane on the user-facing line too.
+            parts.append(f"via {x_envelope.PROVENANCE_LABELS[provenance]}")
         stats = " │ ".join(parts)
         line = _footer_line_for_source(emoji, label, len(items), item_word, stats)
-        outcome = report.source_status.get(source_key)
-        if outcome and outcome.state != health.OK:
-            line += f" │ ⚠ {_format_outcome(outcome)}"
+        # Counts only: run diagnostics live in doctor --postmortem, the saved
+        # raw file, and the model-facing ## Partial Coverage note, never on
+        # the user-facing conclusion surface.
         out.append(line)
 
     # Polymarket (special: count + odds string from existing helper)
@@ -2816,14 +3064,15 @@ def _build_source_footer_lines(report: schema.Report) -> list[str]:
             line = f"📊 Polymarket: {count_str} {plural} │ {odds_str}"
         else:
             line = f"📊 Polymarket: {count_str} {plural}"
-        outcome = report.source_status.get("polymarket")
-        if outcome and outcome.state != health.OK:
-            line += f" │ ⚠ {_format_outcome(outcome)}"
         out.append(line)
 
     amazon_line = _amazon_footer_line(report)
     if amazon_line:
         out.append(amazon_line)
+
+    meta_ads_line = _meta_ads_footer_line(report)
+    if meta_ads_line:
+        out.append(meta_ads_line)
 
     # Web (sources from grounding)
     web_items = report.items_by_source.get("grounding") or []
@@ -2836,9 +3085,6 @@ def _build_source_footer_lines(report: schema.Report) -> list[str]:
             line = f"🌐 Web: {count_str} {plural} - {names}"
         else:
             line = f"🌐 Web: {count_str} {plural}"
-        outcome = report.source_status.get("grounding")
-        if outcome and outcome.state != health.OK:
-            line += f" │ ⚠ {_format_outcome(outcome)}"
         out.append(line)
 
     # Only populated sources (>=1 item) get an emoji-tree line. A source that
@@ -2885,7 +3131,10 @@ def _amazon_footer_line(report: schema.Report) -> str | None:
         # "no products matched" sends the user to fix the wrong thing --
         # so lead with the real outcome, same as every other footer branch.
         if failed:
-            return f'📦 Amazon: no results for "{keyword}" │ ⚠ {_format_outcome(outcome)}'
+            # Counts-only footer: the outcome itself lives in ## Partial
+            # Coverage and doctor --postmortem, so just avoid the misleading
+            # "no products matched" wording when the search never ran.
+            return f'📦 Amazon: no results for "{keyword}"'
         return f'📦 Amazon: no products matched "{keyword}"'
 
     count = len(items)
@@ -2902,8 +3151,6 @@ def _amazon_footer_line(report: schema.Report) -> str | None:
         if total_ratings:
             parts.append(f"{total_ratings:,} ratings")
         line = f"📦 Amazon: {' │ '.join(parts)}"
-        if failed:
-            line += f" │ ⚠ {_format_outcome(outcome)}"
         return line
 
     # Only the *sampled* products earn a slot. A run can carry a dozen
@@ -2939,9 +3186,146 @@ def _amazon_footer_line(report: schema.Report) -> str | None:
     # still accepts a quote so a future writer can supply one.
     entries = [amazon.footer_entry(s) for s in stats]
     line = f"📦 Amazon: {count} {plural} │ {', '.join(entries)}"
-    if failed:
-        line += f" │ ⚠ {_format_outcome(outcome)}"
     return line
+
+
+# Longest advertiser or candidate name the footer will print. The footer is one
+# scannable line inside a box; an unbounded source-controlled name would push
+# every other source's line out of view.
+_META_ADS_NAME_MAX = 32
+
+
+def _footer_safe(value: str, limit: int = _META_ADS_NAME_MAX) -> str:
+    """Make a source-controlled string safe to interpolate into a footer line.
+
+    The advertiser name, the closest-candidate name, and the promo codes all
+    come from the upstream API, so they are attacker-influenceable. Left raw, a
+    name carrying a newline or the footer's own separator could forge extra
+    footer rows in the passed-through emoji tree, which the model relays
+    verbatim. Collapse control characters and the separator, then clip.
+    """
+    cleaned = _sanitize_url_for_single_line_output(str(value or "")).replace("│", "|")
+    cleaned = " ".join(cleaned.split()).strip()
+    if len(cleaned) > limit:
+        cleaned = cleaned[:limit].rstrip() + "…"
+    return cleaned
+
+
+_PLACEMENT_SHORT = {
+    "FACEBOOK": "FB",
+    "INSTAGRAM": "IG",
+    "THREADS": "Threads",
+    "MESSENGER": "Messenger",
+    "WHATSAPP": "WhatsApp",
+    "AUDIENCE_NETWORK": "Audience",
+}
+
+
+def _meta_ads_footer_line(report: schema.Report) -> str | None:
+    """Build the 📣 Meta Ads emoji-footer line.
+
+    Every count comes from the adapter's tally, never from ``items_by_source``.
+    The pipeline truncates each source's stream to a per-depth limit (12 at
+    default) before rendering, so counting surviving items would report 12
+    creatives for a page that ran thirty, and would under-count the video and
+    transcript work that was actually paid for.
+
+    Four shapes, because an empty line is never the right answer here -- if the
+    lane ran and found nothing, the reader needs to know which nothing it was:
+
+    * **Resolved with creatives** -- advertiser, what launched this window, and
+      the paid-media detail (placements, promo codes, transcripts).
+    * **Resolved, nothing new** -- name the advertiser and how much it is still
+      running from before, so "no ads" is not confused with "not advertising".
+    * **Unresolved** -- name the closest candidate and point at the override.
+    * **Failed** -- name the outcome rather than implying an empty Ad Library.
+    """
+    tally = (report.artifacts or {}).get("meta_ads_tally") or {}
+    page = (report.artifacts or {}).get("meta_ads_page") or {}
+    outcome = report.source_status.get("meta_ads")
+    if not tally and not page and outcome is None:
+        return None
+
+    # Three distinct states, and conflating any two of them misleads:
+    #   failed      -- the lane could not run; say so, never "found nothing".
+    #   partial     -- it ran and was cut short; its counts are a floor, so a
+    #                  "nothing new" conclusion drawn from them would be a
+    #                  claim the data does not support.
+    #   no results  -- it ran to completion and the answer is genuinely empty.
+    # NO_RESULTS is what the pipeline stamps on any zero-item source, so
+    # treating it as failure would collapse every honest empty state below into
+    # a generic "no ads pulled".
+    state = getattr(outcome, "state", None)
+    detail = str(getattr(outcome, "detail", "") or "").strip()
+    if outcome and state not in (health.OK, schema.PARTIAL, schema.NO_RESULTS):
+        return f"📣 Meta Ads: no ads pulled ({detail})" if detail else "📣 Meta Ads: no ads pulled"
+    cut_short = state == schema.PARTIAL
+
+    resolution = str(tally.get("resolution") or "")
+    if resolution == meta_ads.NO_CANDIDATES:
+        return "📣 Meta Ads: no advertiser candidates returned │ pass --meta-ads-page to target one"
+    if resolution == meta_ads.UNRESOLVED or not page:
+        candidate = _footer_safe(tally.get("top_candidate") or "")
+        if candidate:
+            return (
+                f"📣 Meta Ads: no advertiser matched │ closest: {candidate} "
+                f"│ pass --meta-ads-page to target one"
+            )
+        return "📣 Meta Ads: no advertiser matched │ pass --meta-ads-page to target one"
+
+    advertiser = _footer_safe(page.get("name") or tally.get("advertiser") or "")
+    launched = int(tally.get("launched_in_window") or 0)
+    still = int(tally.get("still_running") or 0)
+
+    if not launched:
+        # A cut-short lane never reached the end of the page, so "no new
+        # creatives" would state a conclusion its own data cannot support.
+        if cut_short:
+            head = f"📣 Meta Ads: {advertiser} │ incomplete".rstrip()
+            parts = [head, "no new creatives seen before the run was cut short"]
+            if detail:
+                parts.append(_footer_safe(detail, 60))
+            return " │ ".join(parts)
+        parts = [f"📣 Meta Ads: no new creatives for {advertiser}".rstrip()]
+        if still:
+            parts.append(f"{still} still running from before")
+        return " │ ".join(parts)
+
+    fetched = int(tally.get("fetched") or 0)
+    total = int(tally.get("endpoint_total") or 0)
+    # A page bigger than the depth cap is a sample, and saying so is the
+    # difference between "this brand launched 12 creatives" and "we looked at
+    # 60 of its 222 live ads and 12 of those were new". The two numbers are
+    # different units on purpose -- deduped creatives against raw ads -- so
+    # both get named rather than sharing one bare noun.
+    if tally.get("cursor_remaining") and total > fetched > 0:
+        head = f"{launched} new of {fetched} ads fetched ({total:,} live)"
+    else:
+        head = f"{launched} new {'creative' if launched == 1 else 'creatives'}"
+
+    parts = [f"📣 Meta Ads: {advertiser} │ {head}"] if advertiser else [f"📣 Meta Ads: {head}"]
+    if cut_short:
+        parts.append("incomplete")
+    if still:
+        parts.append(f"{still} running from before")
+    # Resolution that rested on substring containment is the weakest tier the
+    # resolver accepts, so the reader is told to check the advertiser rather
+    # than left to assume the name was confirmed.
+    if str(tally.get("match_strength") or "") == meta_ads.MATCH_CONTAINED:
+        parts.append("matched by partial name")
+    placements = [
+        _PLACEMENT_SHORT.get(str(p).upper(), _footer_safe(p, 12))
+        for p in (tally.get("placements") or [])
+    ]
+    if placements:
+        parts.append(", ".join(placements))
+    codes = [_footer_safe(c, 16) for c in (tally.get("promo_codes") or []) if c]
+    if codes:
+        parts.append(f"code {', '.join(codes)}")
+    transcribed = int(tally.get("transcribed") or 0)
+    if transcribed:
+        parts.append(f"{transcribed} transcribed")
+    return " │ ".join(parts)
 
 
 def _top_voices_footer_line(report: schema.Report) -> str | None:
@@ -3017,6 +3401,15 @@ def _render_emoji_footer(report: schema.Report, save_path: str | None) -> list[s
     if raw_line:
         body.append(raw_line)
 
+    # Footer contents are relayed as engine-owned text.  Source handles,
+    # containers, warnings, and save paths can all contain attacker-controlled
+    # or user-controlled strings, so collapse every body row through the same
+    # boundary before adding the engine-owned delimiters.
+    body = [
+        untrusted.sanitize_untrusted_text(line, limit=1000, single_line=True)
+        for line in body
+    ]
+
     if not body:
         return []
 
@@ -3078,6 +3471,10 @@ def _render_stats(report: schema.Report) -> list[str]:
         actor_summary = _top_actor_summary(source, items)
         if actor_summary:
             parts.append(actor_summary)
+        provenance = report.artifacts.get("x_provenance") if source == "x" else None
+        if provenance in x_envelope.PROVENANCE_LABELS:
+            # Host-fetched lane (--x-posts): name the provenance in the footer.
+            parts.append(f"via {x_envelope.PROVENANCE_LABELS[provenance]}")
         lines.append(f"- {_source_label(source)}: {' | '.join(parts)}")
     lines.append("")
     return lines
@@ -3115,23 +3512,26 @@ def _format_date(item: schema.SourceItem | None) -> str:
     if not item or not item.published_at:
         return "date unknown [date:low]"
     if item.date_confidence == "high":
-        return item.published_at
-    return f"{item.published_at} [date:{item.date_confidence}]"
+        return _safe_inline(item.published_at, limit=120)
+    return (
+        f"{_safe_inline(item.published_at, limit=120)} "
+        f"[date:{_safe_inline(item.date_confidence, limit=40)}]"
+    )
 
 
 def _format_actor(item: schema.SourceItem | None) -> str | None:
     if not item:
         return None
     if item.source == "reddit" and item.container:
-        return f"r/{item.container}"
+        return f"r/{_safe_inline(item.container, limit=240)}"
     if item.source in {"x", "bluesky", "truthsocial"} and item.author:
-        return f"@{item.author.lstrip('@')}"
+        return f"@{_safe_inline(item.author.lstrip('@'), limit=240)}"
     if item.source == "youtube" and item.author:
-        return item.author
+        return _safe_inline(item.author, limit=240)
     if item.container and item.container != "Polymarket":
-        return item.container
+        return _safe_inline(item.container, limit=240)
     if item.author:
-        return item.author
+        return _safe_inline(item.author, limit=240)
     return None
 
 
@@ -3159,6 +3559,7 @@ ENGAGEMENT_DISPLAY: dict[str, list[tuple[str, str]]] = {
     "digg": [("postCount", "posts"), ("uniqueAuthors", "auth")],
     "trustpilot": [("reviews", "reviews")],
     "amazon": [("ratings", "ratings")],
+    "meta_ads": [("variants", "variants")],
 }
 
 
@@ -3189,7 +3590,7 @@ def _format_number(value: object) -> str:
     try:
         numeric = float(value)
     except (TypeError, ValueError):
-        return str(value)
+        return _safe_inline(value, limit=120)
     if numeric >= 1000 and numeric.is_integer():
         return f"{int(numeric):,}"
     if numeric.is_integer():
@@ -3253,15 +3654,15 @@ def _top_voices_overall(
 
 def _stats_actor(item: schema.SourceItem) -> str | None:
     if item.source == "reddit" and item.container:
-        return f"r/{item.container}"
+        return f"r/{_safe_inline(item.container, limit=240)}"
     if item.source in {"x", "bluesky", "truthsocial"} and item.author:
-        return f"@{item.author.lstrip('@')}"
+        return f"@{_safe_inline(item.author.lstrip('@'), limit=240)}"
     if item.source == "youtube" and item.author:
-        return item.author
+        return _safe_inline(item.author, limit=240)
     if item.container and item.container != "Polymarket":
-        return item.container
+        return _safe_inline(item.container, limit=240)
     if item.author:
-        return item.author
+        return _safe_inline(item.author, limit=240)
     return None
 
 
@@ -3279,7 +3680,7 @@ def _format_corroboration(candidate: schema.Candidate) -> str | None:
 def _format_explanation(candidate: schema.Candidate) -> str | None:
     if not candidate.explanation or candidate.explanation == "fallback-local-score":
         return None
-    return candidate.explanation
+    return untrusted.bounded_untrusted_explanation(candidate.explanation)
 
 
 # Per-source minimum vote counts for showing a top comment in compact emit.
@@ -3337,7 +3738,8 @@ def _comment_attribution(source: str | None, author: str | None) -> str:
     # strip it before re-prefixing so we don't emit '@@handle'.
     if prefix and author.startswith(prefix):
         author = author[len(prefix) :]
-    return f"{prefix}{author}" if prefix else author
+    safe_author = _safe_inline(author, limit=240)
+    return f"{prefix}{safe_author}" if prefix else safe_author
 
 
 def _top_comments_list(
@@ -3389,13 +3791,13 @@ def _digg_posts_for(item: schema.SourceItem | None, limit: int = 3) -> list[dict
 
 def _format_digg_quote(post: dict, body_limit: int = 200) -> str:
     """Format a Digg-attached X post as an inline 'via Digg' quote line."""
-    handle = post.get("username") or ""
-    x_url = post.get("x_url") or ""
-    body = (post.get("body") or "").replace("\n", " ").strip()
+    handle = _safe_inline(post.get("username") or "", limit=240)
+    x_url = _markdown_url_link(post.get("x_url") or "")
+    body = _safe_inline(post.get("body") or "", limit=body_limit)
     if len(body) > body_limit:
         body = body[: body_limit - 1].rstrip() + "…"
     if x_url and handle:
-        return f"[@{handle}]({x_url}) via Digg: {body}"
+        return f"@{handle} {x_url} via Digg: {body}"
     if handle:
         return f"@{handle} via Digg: {body}"
     return f"via Digg: {body}"
@@ -3408,7 +3810,10 @@ def _transcript_highlights(item: schema.SourceItem | None) -> list[str]:
 
 
 def _source_label(source: str) -> str:
-    return SOURCE_LABELS.get(source, source.replace("_", " ").title())
+    return _safe_inline(
+        SOURCE_LABELS.get(source, str(source).replace("_", " ").title()),
+        limit=120,
+    )
 
 
 def _best_take_relevance_ok(candidate) -> bool:
@@ -3510,23 +3915,29 @@ def _render_best_takes(
         source_label = _source_label(attribution_source)
         author = attribution_item.author if attribution_item else None
         attribution = (
-            f"@{author} on {source_label}"
+            f"@{_safe_inline(author, limit=240)} on {source_label}"
             if author and attribution_source in ("x", "tiktok", "instagram", "threads")
             else f"{source_label}"
         )
         if author and attribution_source == "reddit":
             container = attribution_item.container if attribution_item else None
-            attribution = f"r/{container} comment" if container else "Reddit"
+            attribution = (
+                f"r/{_safe_inline(container, limit=240)} comment"
+                if container
+                else "Reddit"
+            )
         # fun: is the LLM humor score; flag when crowd votes materially lifted
         # this item's ranking, so a lower-fun item ranking above a higher-fun one
         # reads correctly (it was crowd-boosted, not mis-ordered).
         crowd_boost = effective - (candidate.fun_score or 0.0)
         crowd_tag = " +crowd" if crowd_boost >= 5.0 else ""
         score_tag = f"(fun:{candidate.fun_score:.0f}{crowd_tag})"
+        fun_explanation = untrusted.bounded_untrusted_explanation(
+            candidate.fun_explanation
+        )
         reason = (
-            f" -- {candidate.fun_explanation}"
-            if candidate.fun_explanation
-            and candidate.fun_explanation != "heuristic-fallback"
+            f" -- {fun_explanation}"
+            if fun_explanation and fun_explanation != "heuristic-fallback"
             else ""
         )
         lines.append(
@@ -3647,27 +4058,6 @@ def _truncate(text: str, limit: int) -> str:
     return text[: limit - 3].rstrip() + "..."
 
 
-_ENGINE_CONTROL_SENTINEL = re.compile(
-    r"END PASS-THROUGH FOOTER|PASS-THROUGH FOOTER|"
-    r"END EVIDENCE FOR SYNTHESIS|EVIDENCE FOR SYNTHESIS",
-    re.IGNORECASE,
-)
-
-
-def _defang_engine_control(text: str) -> str:
-    """Keep source text readable without letting it mint engine control syntax."""
-    safe = text.replace("<!--", "&lt;!--").replace("-->", "--&gt;")
-    return _ENGINE_CONTROL_SENTINEL.sub(
-        lambda match: match.group(0).replace(" ", "\u00a0"), safe
-    )
-
-
-def _format_untrusted_title(text: str, limit: int | None = None) -> str:
-    """Collapse attacker-controlled titles to one defanged structural line."""
-    safe = _defang_engine_control(" ".join(str(text or "").split()))
-    return _truncate(safe, limit) if limit is not None else safe
-
-
 _ATX_HEADING_PREFIX = re.compile(r"^(#{1,6})(\s|$)")
 
 
@@ -3698,11 +4088,15 @@ def _format_untrusted_evidence(
     headings inside the EVIDENCE FOR SYNTHESIS block (#874). Continuation
     lines stay indented (CommonMark ATX headings need ≤3 leading spaces), and
     leading ``#`` runs are escaped as defense in depth.
+
+    Indentation stops CommonMark from parsing a forged heading, but it does
+    nothing to an HTML comment a model reads as text, so the engine's own
+    block sentinels are defanged here too (#1053).
     """
-    truncated = _truncate(_defang_engine_control(text), limit)
+    truncated = _truncate(text, limit)
     if not truncated:
         return truncated
-    lines = truncated.splitlines()
+    lines = untrusted.sanitize_untrusted_text(truncated).splitlines()
     safe: list[str] = [_escape_atx_heading_prefix(lines[0])]
     for line in lines[1:]:
         safe.append(continuation_indent + _escape_atx_heading_prefix(line))

@@ -24,6 +24,22 @@ from lib import env
 
 SETUP_PASS_SH = Path(__file__).resolve().parents[1] / "skills" / "last30days" / "scripts" / "setup-pass.sh"
 
+
+def test_setup_pass_presence_does_not_decrypt_and_writer_is_stdin_only():
+    """TEST_ID=H003-PASS-001: presence is metadata-only; secret stays off argv."""
+    script = SETUP_PASS_SH.read_text(encoding="utf-8")
+    code = "\n".join(
+        line for line in script.splitlines() if not line.lstrip().startswith("#")
+    )
+    assert "pass show" not in code
+    assert script.count('pass ls "${PREFIX}${key}"') == 2
+    logical = re.sub(r"\\\r?\n", " ", code)
+    insert_lines = [line for line in logical.splitlines() if "| pass insert " in line]
+    assert len(insert_lines) == 1
+    assert '"$value"' not in insert_lines[0].split("| pass insert", 1)[1]
+    assert "unset value" in script
+    assert ">/dev/null 2>&1" in insert_lines[0]
+
 # ---------------------------------------------------------------------------
 # _load_pass unit tests
 # ---------------------------------------------------------------------------
@@ -242,3 +258,10 @@ def test_pass_keys_match_setup_script():
         "lib/env.py::KEYCHAIN_KEYS and scripts/setup-pass.sh::ALL_KEYS have "
         f"drifted.\n  python: {python_keys}\n  shell:  {shell_keys}"
     )
+
+
+def test_x_bearer_token_is_a_pass_key():
+    """U6/R17: the X API bearer is loadable from pass(1) and listed exactly
+    once by the setup-pass.sh helper."""
+    assert "X_BEARER_TOKEN" in env.KEYCHAIN_KEYS
+    assert _parse_all_keys_from_shell(SETUP_PASS_SH).count("X_BEARER_TOKEN") == 1

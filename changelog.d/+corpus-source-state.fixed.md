@@ -1,0 +1,1 @@
+Local corpus runs now classify an entirely missing or unreadable corpus root as `unreachable`, and mixed readable/unreadable roots as `partial`, instead of presenting either failure as a clean `no-results` outcome.

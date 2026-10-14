@@ -1,14 +1,14 @@
 {
   "name": "last30days",
-  "version": "3.21.1",
+  "version": "3.27.2+hardened.1",
   "description": "Research any topic across Reddit, X, YouTube, TikTok, Instagram, Hacker News, Polymarket, GitHub, and 5+ more sources. AI agent scores by upvotes, likes, and real money - not editors.",
   "author": {
     "name": "Matt Van Horn",
     "email": "mvanhorn@gmail.com",
     "url": "https://github.com/mvanhorn"
   },
-  "homepage": "https://github.com/mvanhorn/last30days-skill",
-  "repository": "https://github.com/mvanhorn/last30days-skill",
+  "homepage": "https://github.com/elijahzhang1973-ui/last30days-skill-hardened",
+  "repository": "https://github.com/elijahzhang1973-ui/last30days-skill-hardened",
   "license": "MIT",
   "keywords": [
     "competitor research",

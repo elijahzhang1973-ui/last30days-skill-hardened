@@ -1,0 +1,113 @@
+{
+  "schema_version": "1.0",
+  "release": "v3.27.2-hardened.1",
+  "policy_type": "static_release_scope",
+  "dynamic_evidence_location": "external release evidence ledger",
+  "surfaces": [
+    {
+      "surface": "skill-python",
+      "platform": "windows",
+      "architecture": "any",
+      "source_supported": "YES",
+      "unit_tested": "PARTIAL",
+      "integration_tested": "NO",
+      "host_e2e_verified": "NO",
+      "release_supported": "NO",
+      "excluded": "YES"
+    },
+    {
+      "surface": "skill-python",
+      "platform": "darwin",
+      "architecture": "any",
+      "source_supported": "YES",
+      "unit_tested": "NOT_RUN",
+      "integration_tested": "NOT_RUN",
+      "host_e2e_verified": "NO",
+      "release_supported": "NO",
+      "excluded": "YES"
+    },
+    {
+      "surface": "skill-python",
+      "platform": "linux",
+      "architecture": "any",
+      "source_supported": "YES",
+      "unit_tested": "G5_REQUIRED",
+      "integration_tested": "G5_REQUIRED",
+      "host_e2e_verified": "G5_REQUIRED",
+      "release_supported": "CONDITIONAL_G5",
+      "excluded": "NO"
+    },
+    {
+      "surface": "macos-keychain",
+      "platform": "darwin",
+      "architecture": "any",
+      "source_supported": "YES",
+      "unit_tested": "NOT_RUN",
+      "integration_tested": "NOT_RUN",
+      "host_e2e_verified": "NO",
+      "release_supported": "NO",
+      "excluded": "YES"
+    },
+    {
+      "surface": "mcpb",
+      "platform": "darwin",
+      "architecture": "arm64",
+      "source_supported": "YES",
+      "unit_tested": "NOT_RUN",
+      "integration_tested": "NOT_RUN",
+      "host_e2e_verified": "NO",
+      "release_supported": "NO",
+      "excluded": "YES"
+    },
+    {
+      "surface": "mcpb",
+      "platform": "darwin",
+      "architecture": "amd64",
+      "source_supported": "YES",
+      "unit_tested": "NOT_RUN",
+      "integration_tested": "NOT_RUN",
+      "host_e2e_verified": "NO",
+      "release_supported": "NO",
+      "excluded": "YES"
+    },
+    {
+      "surface": "mcpb",
+      "platform": "linux",
+      "architecture": "amd64",
+      "source_supported": "YES",
+      "unit_tested": "G5_REQUIRED",
+      "integration_tested": "G5_REQUIRED",
+      "host_e2e_verified": "G5_REQUIRED",
+      "release_supported": "CONDITIONAL_G5",
+      "excluded": "NO"
+    },
+    {
+      "surface": "mcpb",
+      "platform": "windows",
+      "architecture": "any",
+      "source_supported": "NOT_ESTABLISHED",
+      "unit_tested": "NO",
+      "integration_tested": "NO",
+      "host_e2e_verified": "NO",
+      "release_supported": "NO",
+      "excluded": "YES"
+    }
+  ],
+  "reopen_conditions": {
+    "windows_skill_python": [
+      "the complete Windows Python suite passes without POSIX permission substitutions",
+      "Windows Codex host E2E evidence is attached",
+      "Windows private-file ACL behavior is verified"
+    ],
+    "darwin_surfaces": [
+      "native macOS Skill and MCPB host E2E evidence is attached",
+      "real Keychain behavior is verified without exposing credential values"
+    ],
+    "windows_mcpb": [
+      "a win32 manifest platform is added",
+      "a windows GOOS release-matrix row is added",
+      "a Windows MCPB artifact or executable is built or attached",
+      "a Windows MCP support claim is introduced"
+    ]
+  }
+}

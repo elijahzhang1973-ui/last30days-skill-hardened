@@ -7,7 +7,7 @@ import math
 import re
 from datetime import datetime
 
-from . import http, providers, relevance, schema, signals
+from . import http, providers, relevance, schema, signals, untrusted
 
 
 # Penalty applied when a candidate does not mention the primary entity
@@ -195,20 +195,23 @@ INTERACTION_FLOOR = 35.0
 # not a win.
 FIRST_PARTY_FLOOR = 25.0
 
-# Intent modifiers to strip before extracting the primary entity so that,
-# for example, "Hermes Agent use cases" yields primary_entity="hermes agent"
-# rather than "hermes agent use cases". Kept in sync with
-# planner._INTENT_MODIFIER_PATTERNS.
-_INTENT_MODIFIER_RE = re.compile(
+# Only strip trailing intent modifiers. A word such as "review" may instead be
+# the subject of a longer topic ("AI code review bottleneck").
+_TRAILING_INTENT_MODIFIER_RE = re.compile(
+    r"(?:\s+(?:and|or|&|,)\s*)?"
     r"\b("
     r"use cases|use case|workflows|workflow|"
     r"examples|example|tutorial|tutorials|"
     r"review|reviews|comparison|applications|"
     r"in practice|production use|production|"
     r"how i use"
-    r")\b",
+    r")\b[\s?.,:;!]*$",
     re.IGNORECASE,
 )
+
+_GENERIC_GROUNDING_MIN_TOKENS = 4
+_GROUNDING_ANCHOR_MIN_LENGTH = 6
+_GROUNDING_LOW_SIGNAL_TOKENS = relevance.LOW_SIGNAL_QUERY_TOKENS | {"still", "work"}
 
 INTENT_SCORING_HINTS: dict[str, str] = {
     "comparison": (
@@ -314,21 +317,17 @@ def _intent_hint_block(plan: schema.QueryPlan) -> str:
     return ""
 
 
+def _defang_untrusted_fence(value: str) -> str:
+    """Compatibility wrapper around the canonical untrusted-data boundary."""
+
+    return untrusted.sanitize_untrusted_text(value)
+
+
 def _fenced_untrusted_content(candidate_block: str) -> str:
-    # A scraped closing tag must remain visible data, never terminate the
-    # engine-owned fence. Match case-insensitively and across tag whitespace.
-    safe_block = re.sub(
-        r"<\s*(/?)\s*untrusted_content\s*>",
-        lambda match: match.group(0).replace("<", "&lt;").replace(">", "&gt;"),
-        candidate_block,
-        flags=re.IGNORECASE,
-    )
     return (
         f"{UNTRUSTED_CONTENT_NOTICE}\n\n"
         "Candidates:\n"
-        "<untrusted_content>\n"
-        f"{safe_block}\n"
-        "</untrusted_content>"
+        f"{untrusted.fence_untrusted_content(candidate_block)}"
     )
 
 
@@ -428,7 +427,7 @@ def _apply_llm_scores(
             candidate.candidate_id, _fallback_tuple(candidate, resolved_handles=handles)
         )
         candidate.rerank_score = rerank_score
-        candidate.explanation = reason
+        candidate.explanation = untrusted.bounded_untrusted_explanation(reason)
         candidate.final_score = _final_score(candidate)
 
 
@@ -439,7 +438,7 @@ def _apply_fallback_scores(
     for candidate in candidates:
         rerank_score, reason = _fallback_tuple(candidate, primary_entity=primary_entity, resolved_handles=handles)
         candidate.rerank_score = rerank_score
-        candidate.explanation = reason
+        candidate.explanation = untrusted.bounded_untrusted_explanation(reason)
         candidate.final_score = _final_score(candidate)
 
 
@@ -629,18 +628,33 @@ def _entity_grounded(haystack: str, primary_entity: str) -> bool:
     items that omit the descriptor. Items that never name the brand at all still
     miss the head token and stay demoted.
 
-    Trade-off: a proper noun with a generic head ("New York Times" -> "new")
-    under-demotes rather than over-demotes - the safe direction, since the
-    observed harm was burying real high-engagement signal. Substring (not
-    word-boundary) matching is likewise deliberate: it catches plurals and
-    compounds ("stripes"), and vacuous matches from very short heads ("X",
-    "Go") merely disable the penalty rather than burying good items.
+    Long natural-language topics with a generic head use stronger trailing
+    anchors. Short generic-headed topics remain a safe no-op so entities such as
+    "Go" are not falsely demoted.
     """
     haystack = haystack.lower()
-    tokens = primary_entity.lower().split()
+    tokens = re.findall(r"\w+", primary_entity.lower())
     if not tokens:
         return True
-    return tokens[0] in haystack
+    head = tokens[0]
+    if len(head) > 3 and head not in relevance.LOW_SIGNAL_QUERY_TOKENS:
+        return head in haystack
+
+    # A long natural-language topic headed by "AI", "how", or another generic
+    # word needs a stronger anchor. Short entity-like topics keep the historical
+    # safe no-op rather than risking false demotion.
+    if len(tokens) < _GENERIC_GROUNDING_MIN_TOKENS:
+        return True
+    anchors = [
+        token
+        for token in tokens[1:]
+        if len(token) >= _GROUNDING_ANCHOR_MIN_LENGTH
+        and token not in relevance.STOPWORDS
+        and token not in _GROUNDING_LOW_SIGNAL_TOKENS
+    ]
+    if not anchors:
+        return True
+    return any(re.search(rf"\b{re.escape(token)}", haystack) for token in anchors)
 
 
 def _fallback_tuple(
@@ -697,8 +711,12 @@ def _primary_entity(topic: str) -> str:
     string for topics that are all intent modifier with no entity, so
     callers can skip the grounding check.
     """
-    stripped = _INTENT_MODIFIER_RE.sub(" ", topic)
-    # Also collapse multiple spaces and strip punctuation.
+    stripped = topic
+    while True:
+        shortened = _TRAILING_INTENT_MODIFIER_RE.sub("", stripped, count=1)
+        if shortened == stripped:
+            break
+        stripped = shortened
     stripped = re.sub(r"\s+", " ", stripped).strip(" \t\r\n?.,:;!")
     return stripped
 
@@ -872,7 +890,10 @@ def _extract_comment_text(candidate: schema.Candidate) -> str:
     parts = []
     for item in candidate.source_items:
         for comment in item.metadata.get("top_comments", [])[:3]:
-            body = comment.get("body", "") if isinstance(comment, dict) else str(comment)
+            body = (
+                comment.get("excerpt") or comment.get("body", "")
+                if isinstance(comment, dict) else str(comment)
+            )
             if body:
                 parts.append(body[:150])
         for insight in item.metadata.get("comment_insights", [])[:2]:
@@ -891,7 +912,7 @@ def _extract_comment_text_scored(candidate: schema.Candidate) -> str:
     for item in candidate.source_items:
         for comment in item.metadata.get("top_comments", [])[:3]:
             if isinstance(comment, dict):
-                body = comment.get("body", "")
+                body = comment.get("excerpt") or comment.get("body", "")
                 if not body:
                     continue
                 score = comment.get("score")
@@ -924,7 +945,8 @@ def _apply_fun_scores(candidates: list[schema.Candidate], payload: dict) -> None
         )
     for c in candidates:
         if c.candidate_id in scores:
-            c.fun_score, c.fun_explanation = scores[c.candidate_id]
+            c.fun_score, explanation = scores[c.candidate_id]
+            c.fun_explanation = untrusted.bounded_untrusted_explanation(explanation)
         else:
             _apply_single_fun_fallback(c)
 

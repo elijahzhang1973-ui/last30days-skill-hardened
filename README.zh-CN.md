@@ -2,8 +2,6 @@
 
 [English](README.md) | [Français](README.fr.md) | [Deutsch](README.de.md) | [Español](README.es.md) | [Português (Brasil)](README.pt-BR.md) | [日本語](README.ja.md) | 简体中文
 
-> **非官方加固发行版。** 基于 [`mvanhorn/last30days-skill` v3.21.1](https://github.com/mvanhorn/last30days-skill/releases/tag/v3.21.1)。这不是 mvanhorn 的官方发行版；保留上游版权声明和 MIT 许可条款。
-
 <p align="center">
   <img src="media/pr-assets/last30days-ad.gif" width="720" alt="last30days——由 AI 智能体驱动、搜索真实用户而非编辑内容的搜索引擎" />
 </p>
@@ -15,6 +13,10 @@
   <br/>
   <a href="https://trendshift.io/repositories/21997" target="_blank">
     <img src="https://trendshift.io/api/badge/repositories/21997" alt="mvanhorn/last30days-skill | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/>
+  </a>
+  <br/>
+  <a href="https://github.com/mvanhorn/last30days-skill/actions/workflows/validate.yml">
+    <img src="https://github.com/mvanhorn/last30days-skill/actions/workflows/validate.yml/badge.svg" alt="Validate status" />
   </a>
 </p>
 
@@ -43,7 +45,7 @@ npx skills add mvanhorn/last30days-skill -g
 
 ---
 
-Reddit 的赞同票、X 的点赞、YouTube 的完整字幕、TikTok 的互动数据，以及反映交易者预期的 Polymarket 市场价格——每天都有数百万人用注意力和钱包发出信号。`/last30days` 会并行搜索这些平台，按照真实用户的参与度评分，再由 AI 智能体裁判综合成一份简报。
+Reddit 的赞同票、X 的点赞、YouTube 的完整字幕、TikTok 的互动数据，以及由真金白银和内幕信息支撑的 Polymarket 概率——每天都有数百万人用注意力和钱包投票。`/last30days` 会并行搜索这些平台，按照真实用户的参与度评分，再由 AI 智能体裁判综合成一份简报。
 
 Google 聚合编辑选出的内容，`/last30days` 搜索真实的人。
 
@@ -75,12 +77,13 @@ Google 聚合编辑选出的内容，`/last30days` 搜索真实的人。
 | **TikTok** | 一个触达 360 万人的创作者观点——你永远不会在 Google 上搜到。 |
 | **Instagram Reels** | 带口播字幕的影响者视角，反映视觉文化的信号。 |
 | **Hacker News** | 开发者共识：825 分、899 条评论，技术从业者真正交锋的地方。 |
-| **Polymarket** | 市场隐含概率及其变化：可用于理解交易者预期，但不等同于事实置信度。 |
+| **Polymarket** | 不是观点，而是由真金白银支撑的概率：专辑销量 96%，收购概率 4%。 |
 | **GitHub** | 搜人时查看 PR 速度、按 Star 排名的热门仓库和发行说明；搜主题时查看 Issue 与 Discussion。 |
 | **Digg** | 来自 Digg AI 1000 排行榜（约 1,000 个高信号 X 账号）的精选话题聚类，包含可追溯的行内引用，无需 X 认证。当 PATH 中存在 `digg-pp-cli` 时自动启用。 |
 | **arXiv** | 热点背后的论文。免费查找时间窗口内的新研究，无需 API 密钥。当 PATH 中存在 `arxiv-pp-cli` 时自动启用（首次配置会安装）。 |
 | **Techmeme** | 科技新闻的编辑视角，并按你设定的 30 天窗口筛选。免费且无需 API 密钥。当 PATH 中存在 `techmeme-pp-cli` 时自动启用（首次配置会安装）。 |
 | **LinkedIn** | 职业领域的信号。搜索帖子和文章，其中文章被视为高价值信号。 |
+| **Meta Ads** | 品牌花钱在说什么。本月新投放的 Meta 广告创意，包含文案、优惠码和语音转写。 |
 | **StockTwits** | 交易者情绪。当主题是股票代码或加密货币时自动启用。 |
 | **Threads** | 后 Twitter 时代的文字内容层，汇集创作者和品牌的讨论。 |
 | **Pinterest** | 视觉发现：围绕产品和创意的 Pin、收藏与评论。 |
@@ -91,7 +94,7 @@ Google 聚合编辑选出的内容，`/last30days` 搜索真实的人。
 
 社区贡献者仍在不断加入更多平台。Truth Social 等垂直来源已经进入引擎，更多来源也在路上。
 
-一条获得 1,500 个赞同票的 Reddit 帖子，信号强度高于一篇无人阅读的博客；一个拥有 360 万次观看的 TikTok，比新闻稿更能说明当下的文化热点；Polymarket 则补充交易者当前预期，但应结合市场质量和结算规则理解。
+一条获得 1,500 个赞同票的 Reddit 帖子，信号强度高于一篇无人阅读的博客；一个拥有 360 万次观看的 TikTok，比新闻稿更能说明当下的文化热点；一个有 6.6 万美元成交量支撑的 Polymarket 概率，也比评论员的猜测更难反驳。
 
 综合排序依据的是人们真正参与过的内容——看社会相关性，而不是 SEO 相关性。
 
@@ -165,7 +168,7 @@ v3 打下的基础都还在：真正调用 API 前先运行预研究模块，解
 | **Grok**（xAI Build CLI） | 先运行 `grok plugin marketplace add mvanhorn/last30days-skill`，再运行 `grok plugin install last30days` | `grok plugin update last30days` |
 | **Codex、Cursor、Copilot、Gemini CLI，或其他 50 多个支持 [Agent Skills](https://agentskills.io) 的宿主** | `npx skills add mvanhorn/last30days-skill -g` | `npx skills update last30days -g` |
 | **claude.ai**（网页） | [下载 `last30days.skill`](https://github.com/mvanhorn/last30days-skill/releases/latest/download/last30days.skill)，然后在 claude.ai 中依次进入 Customize > Skills > + > Create skill > Upload a skill 上传 | 重新下载并上传 |
-| **Claude Desktop** | 从[最新版本](https://github.com/mvanhorn/last30days-skill/releases/latest)下载适用于你的平台的 `.mcpb`，拖入 Settings > Extensions | 重新下载新包并拖入 |
+| **Claude Desktop** | 此版本仅支持 Linux x86_64 `.mcpb`；请从已发布版本下载并拖入 Settings > Extensions | 重新下载新包并拖入 |
 | **OpenClaw** | `clawhub install last30days-official` | `clawhub update last30days-official` |
 
 ### Claude Code（推荐）
@@ -181,6 +184,10 @@ v3 打下的基础都还在：真正调用 API 前先运行预研究模块，解
 ```
 npx skills add mvanhorn/last30days-skill -g -a claude-code
 ```
+
+### 快速试用链接
+
+[在 Telegram 或 WhatsApp 中试用 Last30Days Research Skill](https://app.clawmama.run/skills/2ne05f/hermes?utm_source=github&utm_medium=issue&utm_campaign=skill_outreach_mvanhorn_last30days_skill)
 
 原生插件和 `npx skills` 安装可以共存。但 Claude Code 不会对不同安装方式进行去重：若两者同时启用，`/last30days` 会出现两个条目。建议每台机器只选一种安装方式。
 
@@ -199,7 +206,7 @@ grok plugin marketplace add mvanhorn/last30days-skill
 grok plugin install last30days
 ```
 
-加入 `--trust` 可跳过安装确认；使用 `grok plugin update last30days` 更新。为兼容旧机制，Grok 也会读取 Claude Code 的清单文件；原生 `.grok-plugin/` 文件是首选通路，也是 [xAI marketplace](https://github.com/xai-org/plugin-marketplace) 官方目录条目指向的对象。`npx skills add` 仍是有效的跨宿主备用方案。
+加入 `--trust` 可跳过安装确认；使用 `grok plugin update last30days` 更新。为兼容旧机制，Grok 也会读取 Claude Code 的清单文件；原生 `.grok-plugin/` 文件是首选通路，也是 [xAI marketplace](https://github.com/xai-org/plugin-marketplace) 官方目录条目指向的对象。`npx skills add` 仍是有效的跨宿主备用方案。在 Grok Bot 上，X 无需任何设置即可通过机器人内置的 X 工具使用，其次是机器人的 X 连接器，并以官方 X API（`X_BEARER_TOKEN`）作为备用。
 
 ### Codex、Cursor、Copilot、Gemini CLI 与其他 Agent Skills 宿主
 
@@ -211,7 +218,7 @@ npx skills add mvanhorn/last30days-skill -g
 
 `-g`（全局）参数会把 Skill 安装到用户目录，因此所有项目均可使用。不加 `-g` 时，`npx skills` 会安装到当前项目的 `./.skills/` 中，并随仓库提交。对于一个用于研究整个世界的工具，全局安装通常更合适。
 
-Codex 桌面版和其他以文件夹为工作区的宿主，不仅能在 Git 仓库中运行，也能在普通文件夹中工作。第一次研究前，请让宿主智能体从已加载的 Skill 目录运行随附的 `scripts/last30days.py --preflight`；若在源码仓库中，则运行等价命令 `python3 skills/last30days/scripts/last30days.py --preflight`。该命令会展示配置来源、浏览器 Cookie 方案、计划写入的文件、可选命令和被忽略的项目配置，但不会读取 Cookie、写入文件或执行研究。
+Codex 桌面版和其他以文件夹为工作区的宿主，不仅能在 Git 仓库中运行，也能在普通文件夹中工作。若要在不启动研究的情况下检查一次运行会读取和写入什么，请从已加载的 Skill 目录运行随附的 `scripts/last30days.py --preflight`；若在源码仓库中，则运行等价命令 `python3 skills/last30days/scripts/last30days.py --preflight`。该命令会展示配置来源、浏览器 Cookie 方案、计划写入的文件、可选命令和被忽略的项目配置，但不会读取 Cookie、写入文件或执行研究。首次设置并不要求运行它。
 
 默认情况下，`npx skills` 会安装到它自动检测到的宿主。若要指定一个或多个宿主：
 
@@ -248,19 +255,17 @@ npx skills update -g
 
 Claude Desktop 通过 `.mcpb` 包（一种一键式 Model Context Protocol 软件包）将 `/last30days` 安装为 MCP 服务器。
 
-1. 打开[最新版本](https://github.com/mvanhorn/last30days-skill/releases/latest)，下载适用于你的平台的 `.mcpb`：
-   - macOS Apple Silicon：`last30days-pp-mcp-darwin-arm64.mcpb`
-   - macOS Intel：`last30days-pp-mcp-darwin-amd64.mcpb`
+1. 打开最新版本，下载受支持的目标包：
    - Linux x86_64：`last30days-pp-mcp-linux-amd64.mcpb`
 2. 打开 Claude Desktop，进入 Settings > Extensions，将文件拖入。
 3. 出现提示时，粘贴你想启用的数据源所需的 API 密钥。所有字段均可留空——如果全部跳过，引擎会降级为纯 Web 模式。密钥存储在操作系统的钥匙串中。
 4. 重启 Claude Desktop。让 Claude “research Peter Steinberger” 或研究任意主题，它就会调用 `research` 工具。
 
-**宿主要求：** PATH 中需要 Python 3.12+。软件包自带引擎源码，但使用本地 Python 解释器。Windows 用户可从 [python.org](https://www.python.org/downloads/) 安装；macOS 和大多数 Linux 发行版通常已提供兼容版本。
+**宿主要求：** PATH 中需要 Python 3.12+。软件包自带引擎源码，但使用本地 Python 解释器。此要求适用于上面列出的受支持 Linux MCPB 目标。
 
 **密钥不会与 Code Skill 同步。** Claude Desktop 与 Claude Code 采用彼此独立的凭据存储，这是有意的设计。即使你已为 Code Skill 配置 `~/.config/last30days/.env`，仍需在这里重新输入一次相同的密钥。
 
-Windows 支持需要等各平台的清单入口点确定后再实现，请关注后续 Issue。
+**Windows 和 macOS 不在 `v3.27.2-hardened.1` 的发布支持范围内。** 本版本不会构建或发布 Windows/macOS MCPB，通用 Skill/Python 包也仅在 Linux 上获得发布支持。源文件中提及其他平台不构成发布支持声明；请参阅 [PLATFORM_SUPPORT.md](PLATFORM_SUPPORT.md)。
 
 ### OpenClaw
 
@@ -289,7 +294,7 @@ Reddit（含评论）、Hacker News、Polymarket 和 GitHub 无需任何配置�
 |------|----------------|------|
 | Reddit（含评论）+ HN + Polymarket + GitHub + StockTwits | 无 | 免费 |
 | arXiv + Techmeme | 免费 CLI，由首次配置自动安装 | 免费 |
-| X / Twitter | 在任意浏览器中登录 x.com，或设置 `XQUIK_API_KEY` / `XAI_API_KEY` | 浏览器 Cookie 免费；密钥费用取决于服务商 |
+| X / Twitter | 设置 `X_BEARER_TOKEN` 使用官方 X API（近期帖子，大约最近一周；除非你的 X 开发者项目拥有完整归档访问权限。Grok Bot 上作为机器人内置 X 工具之后的备用方式，其他宿主需通过 `LAST30DAYS_X_BACKEND=xapi` 选择启用），或在任意浏览器中登录 x.com，或设置 `XQUIK_API_KEY` / `XAI_API_KEY` | X API 额度来自你自己的 X 开发者项目；浏览器 Cookie 免费；其他密钥费用取决于服务商 |
 | YouTube | `brew install yt-dlp` | 免费 |
 | Bluesky | 来自 bsky.app 的应用密码 | 免费 |
 | TikTok + Instagram + Threads + Pinterest + LinkedIn + YouTube 评论 | ScrapeCreators 密钥 | 前 10,000 次调用免费，之后按量付费 |
@@ -324,7 +329,7 @@ skills/last30days/scripts/setup-keychain.sh --delete XAI_API_KEY
 
 第一天使用时，你大概最想知道以下两件事：
 
-**研究文件保存在哪里。** `LAST30DAYS_MEMORY_DIR` 默认指向 `~/Documents/Last30Days/`（Windows：`C:\Users\<you>\Documents\Last30Days\`）。可以在 shell 中把该环境变量设为任意路径，也可以为单次运行传入 `--save-dir <path>`。若需要把渲染结果精确写入某个路径，请使用 `--output <file>`；文件格式由 `--emit` 决定。使用 `--save-suffix=<name>` 可分别保存同一主题的多个版本（例如按客户区分）。每次使用 `--save-dir` 都会生成 `<slug>-raw[-suffix].md`。研究前运行 `python3 skills/last30days/scripts/last30days.py --preflight`，可预览计划写入的内容。
+**研究文件保存在哪里。** `LAST30DAYS_MEMORY_DIR` 默认指向 `~/Documents/Last30Days/`（Windows：`C:\Users\<you>\Documents\Last30Days\`）。可以在 shell 中把该环境变量设为任意路径，也可以为单次运行传入 `--save-dir <path>`。若需要把渲染结果精确写入某个路径，请使用 `--output <file>`；文件格式由 `--emit` 决定。使用 `--save-suffix=<name>` 可分别保存同一主题的多个版本（例如按客户区分）。每次使用 `--save-dir` 都会生成 `<slug>-raw[-suffix].md`。可选运行 `python3 skills/last30days/scripts/last30days.py --preflight`，在不启动研究的情况下预览计划写入的内容。
 
 **面向智能体和工作流的结构化输出。** 让 `/last30days` 输出机器可读的 JSON，即可获得稳定且带版本号的 agent profile。若在脚本或开发中直接调用引擎，可运行 `python3 skills/last30days/scripts/last30days.py "AI coding agents" --emit=json`；只有确实需要未版本化的内部 `Report` 转储时，才添加 `--json-profile=raw`。详见 [JSON 导出字段参考与版本策略](docs/reference/json-export.md)。
 

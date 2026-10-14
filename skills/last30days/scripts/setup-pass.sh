@@ -44,6 +44,7 @@ ALL_KEYS=(
   XIAOHONGSHU_API_BASE
   GITHUB_TOKEN
   BRIGHTDATA_API_KEY
+  X_BEARER_TOKEN
 )
 
 REPLACE=0
@@ -71,7 +72,9 @@ case "$ACTION" in
   list)
     echo "Stored ${PREFIX}* pass entries:"
     for key in "${ALL_KEYS[@]}"; do
-      if pass show "${PREFIX}${key}" >/dev/null 2>&1; then
+      # `pass show` decrypts the entry.  Listing the exact path proves presence
+      # without asking GPG/pinentry to reveal secret material.
+      if pass ls "${PREFIX}${key}" >/dev/null 2>&1; then
         echo "  $key"
       fi
     done
@@ -98,7 +101,7 @@ fi
 
 added=0; skipped=0; replaced=0
 for key in "${TARGETS[@]}"; do
-  if pass show "${PREFIX}${key}" >/dev/null 2>&1; then
+  if pass ls "${PREFIX}${key}" >/dev/null 2>&1; then
     existing=1
   else
     existing=0
@@ -117,8 +120,9 @@ for key in "${TARGETS[@]}"; do
   fi
   # Don't let one failed insert (gpg misconfig, missing store key, disk) abort
   # the whole batch under `set -e`; report it and move on.
-  if ! printf '%s\n' "$value" | pass insert -m -f "${PREFIX}${key}" >/dev/null; then
+  if ! printf '%s\n' "$value" | pass insert -m -f "${PREFIX}${key}" >/dev/null 2>&1; then
     echo "  failed: $key (pass insert error)" >&2
+    unset value
     skipped=$((skipped + 1))
     continue
   fi
@@ -127,6 +131,7 @@ for key in "${TARGETS[@]}"; do
   else
     added=$((added + 1))
   fi
+  unset value
 done
 
 echo

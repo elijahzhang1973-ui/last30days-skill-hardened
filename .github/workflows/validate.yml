@@ -1,14 +1,53 @@
 name: Validate
 
 on:
+  workflow_dispatch:
   pull_request:
   push:
     branches:
       - main
+      - hardened/v3.27.2-hardened.1
 
 permissions: {}
 
+env:
+  PYTHONUTF8: "1"
+  PYTHONIOENCODING: utf-8
+
 jobs:
+  upstream-baseline:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout fixed upstream baseline
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: mvanhorn/last30days-skill
+          ref: 267d50f7fcbab8a6457a93ad6ca15cbc199f633c
+          path: upstream-baseline
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Run fixed upstream test suite
+        working-directory: upstream-baseline
+        run: |
+          mkdir -p test-results
+          uv run pytest --cov --cov-report=term-missing \
+            --junitxml=test-results/upstream-python-full.xml
+
+      - name: Upload upstream evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: upstream-python-full-evidence
+          path: upstream-baseline/test-results/upstream-python-full.xml
+
   tests:
     runs-on: ubuntu-latest
     permissions:
@@ -20,13 +59,72 @@ jobs:
           persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
 
       - name: Set up Python
         run: uv python install 3.12
 
       - name: Run test suite
-        run: uv run pytest --cov --cov-report=term-missing
+        run: |
+          mkdir -p test-results
+          uv run pytest --cov --cov-report=term-missing \
+            --junitxml=test-results/python-full.xml
+
+      - name: Upload Python evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: python-full-evidence
+          path: test-results/python-full.xml
+
+  windows-process-tree:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Run Windows subprocess tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}/skills/last30days/scripts
+        run: uv run python -m unittest tests.test_subproc -v
+
+  windows-unicode:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Run Windows Unicode contract
+        run: |
+          New-Item -ItemType Directory -Force -Path test-results | Out-Null
+          uv run pytest -q tests/test_hardened_secret_hygiene.py -k unicode --junitxml=test-results/windows-unicode.xml
+
+      - name: Upload Windows Unicode evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: windows-unicode-evidence
+          path: test-results/windows-unicode.xml
 
   eval:
     runs-on: ubuntu-latest
@@ -39,7 +137,7 @@ jobs:
           persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
 
       - name: Set up Python
         run: uv python install 3.12
@@ -63,6 +161,19 @@ jobs:
           go-version: "1.25.5"
           cache-dependency-path: mcp/go.sum
 
+      - name: Sync vendored engine
+        run: bash mcp/scripts/sync-engine.sh
+
       - name: Run MCP Go tests
-        run: go test -race ./...
+        run: |
+          set -o pipefail
+          mkdir -p ../test-results
+          go test -race -json ./... | tee ../test-results/go-full.jsonl
         working-directory: mcp
+
+      - name: Upload Go evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: go-full-evidence
+          path: test-results/go-full.jsonl

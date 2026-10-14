@@ -9,13 +9,13 @@
     {
       "name": "last30days",
       "description": "Research any topic across Reddit, X, YouTube, TikTok, Instagram, Hacker News, Polymarket, GitHub, and 5+ more sources. AI agent scores by upvotes, likes, and real money - not editors.",
-      "version": "3.21.1",
+      "version": "3.27.2+hardened.1",
       "category": "productivity",
       "source": {
         "source": "url",
-        "url": "https://github.com/mvanhorn/last30days-skill.git"
+        "url": "https://github.com/elijahzhang1973-ui/last30days-skill-hardened.git"
       },
-      "homepage": "https://github.com/mvanhorn/last30days-skill",
+      "homepage": "https://github.com/elijahzhang1973-ui/last30days-skill-hardened",
       "keywords": [
         "last30days",
         "last 30 days"

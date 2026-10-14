@@ -1,0 +1,9 @@
+{
+  "schema_version": "last30days-engine-integrity/v1",
+  "skill_id": "last30days",
+  "package_version": "3.27.2+hardened.1",
+  "files": [
+    {"path": "last30days.py", "size": 189614, "sha256": "4b191d088d83f8cb35ea5976f67d7174808e9d3168797a91fe0fcdf7932d25e1"},
+    {"path": "package_integrity.py", "size": 8205, "sha256": "e7a616e924c4f40006072df73b785f1b277d7338383d5a9eb34ff7a8d02e61ac"}
+  ]
+}
