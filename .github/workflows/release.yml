@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - "v*"
+      # RC tags are immutable validation checkpoints, not formal releases.
+      - "!v*-rc*"
   # tag-release.yml dispatches this because GITHUB_TOKEN tag pushes do not
   # start other workflows.
   workflow_dispatch:
@@ -20,10 +22,25 @@ env:
   RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
 
 jobs:
+  release-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reject release-candidate dispatches
+        env:
+          RELEASE_TAG: ${{ env.RELEASE_TAG }}
+        run: |
+          case "${RELEASE_TAG}" in
+            *-rc*)
+              echo "Release-candidate tags must not create formal Releases: ${RELEASE_TAG}"
+              exit 1
+              ;;
+          esac
+
   # Build the existing .skill artifact (Claude Code / Codex / Cursor install
   # surface). Unchanged from prior versions; just isolated into its own job
   # so the .mcpb matrix can run in parallel.
   build-skill:
+    needs: release-guard
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -57,6 +74,7 @@ jobs:
   # package each as a .mcpb. MCPB v0.3 is a ZIP containing the checked-in
   # manifest and the pre-built binary at the manifest's entry point.
   build-mcpb:
+    needs: release-guard
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -138,7 +156,7 @@ jobs:
 
   # Gather every platform artifact and attach to one GitHub release.
   release:
-    needs: [build-skill, build-mcpb]
+    needs: [release-guard, build-skill, build-mcpb]
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -160,6 +178,44 @@ jobs:
           path: dist
           merge-multiple: true
 
+      - name: Prepare governed release notes
+        env:
+          RELEASE_TAG: ${{ env.RELEASE_TAG }}
+        run: |
+          set -euo pipefail
+          candidate_commit="$(git rev-parse HEAD)"
+          candidate_tree="$(git rev-parse 'HEAD^{tree}')"
+          skill_sha="$(sha256sum dist/last30days.skill | awk '{print $1}')"
+          mcpb_sha="$(sha256sum dist/last30days-pp-mcp-linux-amd64.mcpb | awk '{print $1}')"
+
+          cat > dist/release-notes.md <<EOF
+          Unofficial governed hardened distribution.
+
+          Based exactly on upstream v3.27.2.
+
+          ## Identity
+
+          - Upstream commit: \`267d50f7fcbab8a6457a93ad6ca15cbc199f633c\`
+          - Upstream tree: \`c2964132f3167cac73be03cf378bb74893492885\`
+          - Hardened commit: \`${candidate_commit}\`
+          - Hardened tree: \`${candidate_tree}\`
+          - \`last30days.skill\` SHA-256: \`${skill_sha}\`
+          - \`last30days-pp-mcp-linux-amd64.mcpb\` SHA-256: \`${mcpb_sha}\`
+
+          ## Control disposition
+
+          - Reimplemented: H001 endpoint policy, H002 credential-safe redirects, H003 secret hygiene, H005 untrusted-derived-data boundary, H007 data/control separation.
+          - Retained: H006 market-odds calibration.
+          - Retired: H004 legacy Sentinel patch after replacement-control regression coverage.
+
+          ## Limitations and support scope
+
+          - Accepted limitation: no live paid-provider performance benchmark was run; paid and privacy-sensitive lanes remain opt-in.
+          - Missing evidence: macOS host/Keychain E2E, Windows MCPB E2E, provider-backed paid-lane benchmark, and human blind review.
+          - Release support is limited to the packaged Skill contract and the Linux amd64 MCPB. Windows and macOS MCPB artifacts and host-E2E claims are excluded.
+          - Browser-cookie extraction, CDP, agentcookie, Grok/xAI/official X paid lanes, ScrapeCreators, paid YouTube backfill, Meta Ads, Telegram extended lane, Parallel, Perplexity, and custom provider endpoints are disabled by default or require explicit opt-in and credentials. Enabling them may disclose query/source data to the named external provider and may incur cost.
+          EOF
+
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -168,5 +224,6 @@ jobs:
           gh release create "${RELEASE_TAG}" \
             dist/last30days.skill \
             dist/last30days-pp-mcp-*.mcpb \
-            --generate-notes \
+            --title "last30days ${RELEASE_TAG} (unofficial)" \
+            --notes-file dist/release-notes.md \
             --verify-tag
