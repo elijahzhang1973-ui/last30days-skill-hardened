@@ -1,0 +1,8 @@
+# Archived third-party HTML responses are test data, not rendered application
+# templates. They are covered by fixture parsers and adversarial tests.
+fixtures/*.html
+
+# GitHub Actions workflows are parsed and gated by the pinned zizmor workflow.
+# Semgrep's embedded-shell parser cannot parse GitHub expression syntax and
+# otherwise emits PartialParsing errors rather than actionable results.
+.github/workflows/**

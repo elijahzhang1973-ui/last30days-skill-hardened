@@ -3,6 +3,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github" / "workflows" / "security.yml"
+SEMGREP_IGNORE = ROOT / ".semgrepignore"
+SEMGREP_BASELINE = ROOT / ".github" / "semgrep-baseline.json"
+SEMGREP_CHECKER = ROOT / ".github" / "scripts" / "validate_semgrep_baseline.py"
 # AGENTS.md is the canonical agent-guidance file; CLAUDE.md is a one-line
 # pointer (`@AGENTS.md`) so anything Claude Code-shaped reads the same source.
 AGENTS = ROOT / "AGENTS.md"
@@ -57,10 +60,27 @@ def test_security_workflow_runs_sast_without_unused_code_scanning_permission() -
     assert "if: always()" in sast_job
     assert "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a" in sast_job
     assert "name: semgrep-results" in sast_job
+    assert "Validate audited Semgrep baseline" in sast_job
+    assert "validate_semgrep_baseline.py" in sast_job
+    assert "--results semgrep-results.json" in sast_job
+    assert "--baseline .github/semgrep-baseline.json" in sast_job
     assert "contents: read" in sast_job
     assert "security-events: write" not in sast_job
     assert "--sarif" not in sast_job
     assert "upload-sarif" not in sast_job
+
+
+def test_semgrep_scope_and_machine_readable_baseline_are_explicit() -> None:
+    ignore = SEMGREP_IGNORE.read_text(encoding="utf-8")
+    baseline = SEMGREP_BASELINE.read_text(encoding="utf-8")
+    checker = SEMGREP_CHECKER.read_text(encoding="utf-8")
+
+    assert "fixtures/*.html" in ignore
+    assert ".github/workflows/**" in ignore
+    assert '"schema_version": "last30days-semgrep-baseline/v1"' in baseline
+    assert "PASS_WITH_TRIAGED_FINDINGS" in checker
+    assert "if errors:" in checker
+    assert "if missing or unexpected:" in checker
 
 
 def test_agent_guidance_mentions_secret_hygiene() -> None:

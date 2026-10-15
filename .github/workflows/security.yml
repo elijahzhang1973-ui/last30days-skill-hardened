@@ -85,6 +85,12 @@ jobs:
           SEMGREP_SEND_METRICS: off
         run: semgrep scan --config=p/default --metrics=off --json --output semgrep-results.json
 
+      - name: Validate audited Semgrep baseline
+        run: >-
+          python3 .github/scripts/validate_semgrep_baseline.py
+          --results semgrep-results.json
+          --baseline .github/semgrep-baseline.json
+
       - name: Upload Semgrep evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
