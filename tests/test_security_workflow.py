@@ -47,10 +47,16 @@ def test_security_workflow_runs_sast_without_unused_code_scanning_permission() -
     sast_job = text.split("sast-scan:", 1)[1]
 
     assert "semgrep/semgrep@sha256:" in sast_job
-    assert "semgrep scan --config=p/default --metrics=off" in sast_job
+    assert (
+        "semgrep scan --config=p/default --metrics=off --json "
+        "--output semgrep-results.json"
+    ) in sast_job
     assert "semgrep scan --config=auto" not in sast_job
     assert "SEMGREP_SEND_METRICS: off" in sast_job
     assert "continue-on-error: true" not in sast_job
+    assert "if: always()" in sast_job
+    assert "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a" in sast_job
+    assert "name: semgrep-results" in sast_job
     assert "contents: read" in sast_job
     assert "security-events: write" not in sast_job
     assert "--sarif" not in sast_job
