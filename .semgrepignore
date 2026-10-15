@@ -6,3 +6,9 @@ fixtures/*.html
 # Semgrep's embedded-shell parser cannot parse GitHub expression syntax and
 # otherwise emits PartialParsing errors rather than actionable results.
 .github/workflows/**
+
+# Unit and integration tests intentionally exercise hostile URLs, SHA-1 from
+# the RFC 6455 handshake, XML parsers, and dynamic process stubs. Production
+# sources remain scanned; test behavior is governed by pytest/go test gates.
+tests/**
+**/*_test.go

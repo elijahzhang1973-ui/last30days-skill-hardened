@@ -77,6 +77,8 @@ def test_semgrep_scope_and_machine_readable_baseline_are_explicit() -> None:
 
     assert "fixtures/*.html" in ignore
     assert ".github/workflows/**" in ignore
+    assert "tests/**" in ignore
+    assert "**/*_test.go" in ignore
     assert '"schema_version": "last30days-semgrep-baseline/v1"' in baseline
     assert "PASS_WITH_TRIAGED_FINDINGS" in checker
     assert "if errors:" in checker
