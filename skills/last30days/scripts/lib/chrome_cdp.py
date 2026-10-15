@@ -36,15 +36,17 @@ Deliberate constraints (see docs/plans/2026-08-31 X plan):
 from __future__ import annotations
 
 import base64
+import ipaddress
 import json
 import os
 import re
 import socket
 import struct
 import urllib.request
+import urllib.parse
 from typing import Any, Dict, List, Optional
 
-from . import cookie_consent, log
+from . import cookie_consent, http, log
 
 X_COOKIE_NAMES = ("auth_token", "ct0")
 _BASE_DEBUG_PORT = 9222
@@ -73,12 +75,32 @@ def _display_number() -> Optional[int]:
         return None
 
 
-def _normalize_base(url: str) -> str:
-    """Return an ``http://host:port`` base for a user-supplied endpoint."""
+def _normalize_base(url: str) -> Optional[str]:
+    """Return a validated loopback CDP URL, or ``None``.
+
+    CDP exposes browser cookies.  A configured endpoint therefore must never
+    turn this process into a credential client for a remote host.
+    """
     url = url.strip().rstrip("/")
-    if url.startswith(("http://", "https://", "ws://", "wss://")):
-        return url
-    return f"http://{url}"
+    if "://" not in url:
+        url = f"http://{url}"
+    try:
+        parsed = urllib.parse.urlsplit(url)
+        host = parsed.hostname
+        port = parsed.port
+    except ValueError:
+        return None
+    if parsed.scheme not in {"http", "ws"} or not host or port is None:
+        return None
+    if parsed.username is not None or parsed.password is not None:
+        return None
+    try:
+        is_loopback = ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        is_loopback = host.lower() == "localhost"
+    if not is_loopback:
+        return None
+    return url
 
 
 def candidate_endpoints(config: Optional[Dict[str, Any]] = None) -> List[str]:
@@ -96,7 +118,8 @@ def candidate_endpoints(config: Optional[Dict[str, Any]] = None) -> List[str]:
         explicit = (config.get("BROWSER_CDP_URL") or "").strip()
     explicit = explicit or (os.environ.get("BROWSER_CDP_URL") or "").strip()
     if explicit:
-        return [_normalize_base(explicit)]
+        normalized = _normalize_base(explicit)
+        return [normalized] if normalized else []
 
     endpoints = [f"http://127.0.0.1:{_BOX_CHROME_PORT}"]
     display = _display_number()
@@ -107,7 +130,7 @@ def candidate_endpoints(config: Optional[Dict[str, Any]] = None) -> List[str]:
 def _http_get_json(url: str) -> Optional[Any]:
     """GET ``url`` and parse JSON, or None (unreachable/non-JSON)."""
     try:
-        with urllib.request.urlopen(url, timeout=_HTTP_TIMEOUT) as resp:
+        with http.open_request(url, timeout=_HTTP_TIMEOUT) as resp:
             body = resp.read()
     except (OSError, ValueError):
         return None
@@ -141,8 +164,10 @@ def _page_ws_url(base: str) -> Optional[str]:
         if target.get("type") != "page":
             continue
         ws_url = target.get("webSocketDebuggerUrl")
-        if isinstance(ws_url, str) and ws_url.startswith("ws://"):
-            return ws_url
+        if isinstance(ws_url, str):
+            normalized = _normalize_base(ws_url)
+            if normalized and normalized.startswith("ws://"):
+                return normalized
     return None
 
 
@@ -171,10 +196,15 @@ class _WSConn:
         # (ssl.wrap_socket); this client does not, so refuse it rather than
         # open a plaintext socket to a TLS endpoint. Defense in depth alongside
         # the scheme gate in read_x_cookies.
-        match = re.match(r"ws://([^:/]+):(\d+)(/.*)$", ws_url)
-        if not match:
+        ws_url = _normalize_base(ws_url) or ""
+        if not ws_url:
             return None
-        host, port, path = match.group(1), int(match.group(2)), match.group(3)
+        parsed = urllib.parse.urlsplit(ws_url)
+        host, port = parsed.hostname, parsed.port
+        if not host or port is None:
+            return None
+        path = urllib.parse.urlunsplit(("", "", parsed.path or "/", parsed.query, ""))
+        host_header = f"[{host}]" if ":" in host else host
         try:
             sock = socket.create_connection((host, port), timeout=timeout)
         except OSError:
@@ -183,7 +213,7 @@ class _WSConn:
         key = base64.b64encode(os.urandom(16)).decode("ascii")
         handshake = (
             f"GET {path} HTTP/1.1\r\n"
-            f"Host: {host}:{port}\r\n"
+            f"Host: {host_header}:{port}\r\n"
             "Upgrade: websocket\r\n"
             "Connection: Upgrade\r\n"
             f"Sec-WebSocket-Key: {key}\r\n"

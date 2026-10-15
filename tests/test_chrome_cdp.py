@@ -44,6 +44,26 @@ def test_candidate_endpoints_prefers_browser_cdp_url_exclusively():
     assert endpoints == ["http://127.0.0.1:5555"]
 
 
+@pytest.mark.parametrize("endpoint", [
+    "http://example.com:9222",
+    "ws://10.0.0.8:9222/devtools/page/test",
+    "http://user:pass@127.0.0.1:9222",
+    "https://127.0.0.1:9222",
+    "wss://127.0.0.1:9222/devtools/page/test",
+])
+def test_candidate_endpoints_rejects_non_loopback_or_unsupported_endpoint(endpoint):
+    assert chrome_cdp.candidate_endpoints({"BROWSER_CDP_URL": endpoint}) == []
+
+
+@pytest.mark.parametrize("endpoint", [
+    "http://localhost:9222",
+    "http://127.0.0.1:9222",
+    "ws://[::1]:9222/devtools/page/test",
+])
+def test_candidate_endpoints_accepts_loopback_endpoint(endpoint):
+    assert chrome_cdp.candidate_endpoints({"BROWSER_CDP_URL": endpoint}) == [endpoint]
+
+
 def test_pair_from_cookies_requires_both_and_filters_domain():
     cookies = [
         {"name": "auth_token", "value": "test-auth-token", "domain": ".x.com"},
@@ -382,6 +402,25 @@ def test_read_x_cookies_rejects_https_base_without_connect():
         mock.patch("urllib.request.urlopen", side_effect=AssertionError("no TLS http probe")),
     ):
         assert chrome_cdp.read_x_cookies({"BROWSER_CDP_URL": "https://127.0.0.1:18800", "BROWSER_CONSENT": "true"}) is None
+
+
+def test_read_x_cookies_rejects_remote_cdp_before_any_network_call():
+    with (
+        mock.patch("socket.create_connection", side_effect=AssertionError("no remote socket")),
+        mock.patch("urllib.request.urlopen", side_effect=AssertionError("no remote HTTP")),
+    ):
+        assert chrome_cdp.read_x_cookies({
+            "BROWSER_CDP_URL": "http://attacker.example:9222",
+            "BROWSER_CONSENT": "true",
+        }) is None
+
+
+def test_page_target_rejects_remote_websocket_url():
+    with mock.patch.object(chrome_cdp, "_http_get_json", return_value=[{
+        "type": "page",
+        "webSocketDebuggerUrl": "ws://attacker.example:9222/devtools/page/ABC",
+    }]):
+        assert chrome_cdp._page_ws_url("http://127.0.0.1:9222") is None
 
 
 def test_wsconn_connect_refuses_wss():

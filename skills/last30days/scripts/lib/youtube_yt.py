@@ -18,6 +18,7 @@ import tempfile
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -685,7 +686,7 @@ def _fetch_transcript_direct(
     # Step 1: Fetch the watch page HTML
     req = urllib.request.Request(watch_url, headers=headers)
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
+        with http.open_request(req, timeout=timeout) as resp:
             html = resp.read().decode("utf-8", errors="replace")
     except (urllib.error.URLError, urllib.error.HTTPError, OSError, TimeoutError) as exc:
         _log(f"Direct transcript: failed to fetch watch page for {video_id}: {exc}")
@@ -744,12 +745,37 @@ def _fetch_transcript_direct(
         _log(f"Direct transcript: no baseUrl in caption tracks for {video_id}")
         return None
 
+    # The captions URL is controlled by the watch-page response.  Treat it as
+    # untrusted and constrain it before it can become a network destination.
+    try:
+        caption_url = urllib.parse.urlsplit(base_url)
+        caption_host = (caption_url.hostname or "").lower().rstrip(".")
+        caption_port = caption_url.port
+    except (TypeError, ValueError):
+        caption_url = None
+        caption_host = ""
+        caption_port = None
+    allowed_host = any(
+        caption_host == suffix or caption_host.endswith(f".{suffix}")
+        for suffix in ("youtube.com", "googlevideo.com")
+    )
+    if (
+        caption_url is None
+        or caption_url.scheme != "https"
+        or caption_url.username is not None
+        or caption_url.password is not None
+        or caption_port not in (None, 443)
+        or not allowed_host
+    ):
+        _log(f"Direct transcript: rejected untrusted caption URL for {video_id}")
+        return None
+
     # Step 3: Fetch the VTT subtitle file
     sep = "&" if "?" in base_url else "?"
     vtt_url = f"{base_url}{sep}fmt=vtt"
     vtt_req = urllib.request.Request(vtt_url, headers=headers)
     try:
-        with urllib.request.urlopen(vtt_req, timeout=timeout) as resp:
+        with http.open_request(vtt_req, timeout=timeout) as resp:
             vtt_text = resp.read().decode("utf-8", errors="replace")
     except (urllib.error.URLError, urllib.error.HTTPError, OSError, TimeoutError) as exc:
         _log(f"Direct transcript: failed to fetch VTT for {video_id}: {exc}")

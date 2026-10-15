@@ -74,7 +74,7 @@ def _fetch_json(url: str, timeout: int = 15) -> Optional[Dict[str, Any]]:
 
     for attempt in range(MAX_RETRIES):
         try:
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
+            with http.open_request(req, timeout=timeout) as resp:
                 content_type = resp.headers.get("Content-Type", "")
                 if "json" not in content_type and "text/html" in content_type:
                     _log(f"Anti-bot HTML response (Content-Type: {content_type})")

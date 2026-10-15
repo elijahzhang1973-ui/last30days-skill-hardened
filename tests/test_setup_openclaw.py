@@ -380,6 +380,30 @@ class TestFetchApiKey:
         assert mock_urlopen.call_count == setup_wizard._PROFILE_FETCH_ATTEMPTS
         assert mock_sleep.call_count == setup_wizard._PROFILE_FETCH_ATTEMPTS - 1
 
+    @patch("lib.setup_wizard.time.sleep")
+    @patch("lib.setup_wizard.urlopen")
+    def test_http_error_detail_redacts_secret_fields(self, mock_urlopen, _mock_sleep):
+        """Untrusted profile errors must never echo credential-shaped values."""
+        from io import BytesIO
+        from urllib.error import HTTPError
+
+        body = json.dumps({
+            "message": "upstream failed",
+            "api_key": "sc-secret-value",
+            "nested": {"accessToken": "gho-secret-value", "cookie": "session-secret"},
+        }).encode()
+        def _error(*_args, **_kwargs):
+            raise HTTPError("https://example.com", 500, "error", {}, BytesIO(body))
+        mock_urlopen.side_effect = _error
+
+        result = setup_wizard.fetch_api_key("gho-input-secret")
+        detail = result["detail"]
+        assert result["reason"] == "upstream_error"
+        assert "sc-secret-value" not in detail
+        assert "gho-secret-value" not in detail
+        assert "session-secret" not in detail
+        assert detail.count("<redacted>") == 3
+
 
 class TestRunFullDeviceAuth:
     """Tests for run_full_device_auth()."""

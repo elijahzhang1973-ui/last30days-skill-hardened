@@ -25,8 +25,8 @@ def test_synced_engine_persists_research_and_emits_json(tmp_path):
     sync_script.parent.mkdir(parents=True)
     shutil.copy2(ROOT / "mcp" / "scripts" / "sync-engine.sh", sync_script)
     subprocess.run(
-        ["bash", str(sync_script)],
-        cwd=tmp_path,
+        ["bash", "-lc", "./mcp/scripts/sync-engine.sh"],
+        cwd=staged_repo,
         check=True,
         capture_output=True,
         text=True,

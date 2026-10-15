@@ -8,6 +8,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -15,11 +16,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
+from urllib.request import Request
 
 sys.path.insert(0, str(Path(__file__).parent))
 
 from lib import env as envlib
+from lib import http
 from lib import schema
 from lib.providers import GEMINI_FLASH_LITE
 
@@ -46,7 +48,8 @@ def _load_default_topics() -> list[tuple[str, str]]:
 DEFAULT_TOPICS = _load_default_topics()
 DEFAULT_SEARCH = ""
 DEFAULT_JUDGE_MODEL = GEMINI_FLASH_LITE
-GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+_GEMINI_MODEL_RE = re.compile(r"^[A-Za-z0-9._-]+$")
 EVAL_CREDENTIAL_ENV_KEYS = (
     "GOOGLE_API_KEY",
     "GEMINI_API_KEY",
@@ -214,18 +217,20 @@ def extract_gemini_text(payload: dict[str, Any]) -> str:
 
 
 def call_gemini_judge(api_key: str, model: str, prompt: str) -> dict[str, Any]:
+    if not _GEMINI_MODEL_RE.fullmatch(model):
+        raise ValueError("Gemini model must contain only letters, digits, dot, underscore, or hyphen.")
     body = {
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {"temperature": 0, "responseMimeType": "application/json"},
     }
     request = Request(
-        GEMINI_API_URL.format(model=model, api_key=api_key),
+        GEMINI_API_URL.format(model=model),
         data=json.dumps(body).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
+        headers={"Content-Type": "application/json", "x-goog-api-key": api_key},
         method="POST",
     )
     try:
-        with urlopen(request, timeout=120) as response:
+        with http.open_request(request, timeout=120) as response:
             payload = json.loads(response.read().decode("utf-8"))
     except HTTPError as exc:
         detail = exc.read().decode("utf-8", errors="replace")

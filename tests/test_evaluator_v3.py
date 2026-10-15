@@ -43,6 +43,7 @@ class EvaluatorV3Tests(unittest.TestCase):
                 with (
                     mock.patch.object(sys, "argv", argv),
                     mock.patch.dict(os.environ, {"GOOGLE_API_KEY": "dummy-evaluation-key"}),
+                    mock.patch.object(evaluator.envlib, "get_config", return_value={"GOOGLE_API_KEY": "dummy-evaluation-key"}),
                     mock.patch.object(evaluator.subprocess, "run", autospec=True, side_effect=responses),
                     mock.patch.object(evaluator, "call_gemini_judge", autospec=True, side_effect=[
                         {"judgments": [{"id": baseline_url, "grade": 0}, {"id": shared_url, "grade": 3}, {"id": old_url, "grade": 3}]},
@@ -173,6 +174,23 @@ class EvaluatorV3Tests(unittest.TestCase):
         )
         with self.assertRaises(ValueError):
             evaluator.extract_gemini_text({"candidates": [{"content": {"parts": [{}]}}]})
+
+    def test_gemini_key_is_header_only_and_model_is_validated(self):
+        response = mock.MagicMock()
+        response.read.return_value = json.dumps({
+            "candidates": [{"content": {"parts": [{"text": '{"judgments": []}'}]}}]
+        }).encode()
+        response.__enter__.return_value = response
+        with mock.patch.object(evaluator.http, "open_request", return_value=response) as open_request:
+            self.assertEqual(
+                {"judgments": []},
+                evaluator.call_gemini_judge("super-secret", "gemini-3.1-flash-lite", "judge"),
+            )
+        request = open_request.call_args.args[0]
+        self.assertNotIn("super-secret", request.full_url)
+        self.assertEqual("super-secret", request.get_header("X-goog-api-key"))
+        with self.assertRaises(ValueError):
+            evaluator.call_gemini_judge("super-secret", "../bad?key=leak", "judge")
 
     def test_get_judgments_uses_cache_and_skips_when_not_configured(self):
         with tempfile.TemporaryDirectory() as tmp:

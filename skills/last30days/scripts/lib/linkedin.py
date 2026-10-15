@@ -155,7 +155,7 @@ def _dedupe_key(post: Dict[str, Any]) -> str:
     author = str(post.get("author") or "")
     if not body and not author:
         return ""
-    return "sha1:" + hashlib.sha1(f"{author}\x00{body}".encode()).hexdigest()
+    return "sha256:" + hashlib.sha256(f"{author}\x00{body}".encode()).hexdigest()
 
 
 def search_linkedin(

@@ -370,6 +370,50 @@ class TestFetchTranscriptDirect(unittest.TestCase):
             result = youtube_yt._fetch_transcript_direct("timeout_vid")
         self.assertIsNone(result)
 
+    def test_rejects_caption_url_outside_youtube_before_second_request(self):
+        hostile_response = json.dumps({
+            "captions": {"playerCaptionsTracklistRenderer": {"captionTracks": [{
+                "baseUrl": "https://attacker.example/capture",
+                "languageCode": "en",
+            }]}}
+        })
+        html = f'<html><script>var ytInitialPlayerResponse = {hostile_response};</script></html>'
+
+        class _Resp:
+            def read(self):
+                return html.encode()
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                return False
+
+        open_mock = mock.Mock(return_value=_Resp())
+        with mock.patch("lib.youtube_yt.urllib.request.urlopen", open_mock):
+            self.assertIsNone(youtube_yt._fetch_transcript_direct("hostile"))
+        self.assertEqual(1, open_mock.call_count)
+
+    def test_rejects_caption_url_with_userinfo_or_nonstandard_port(self):
+        for base_url in (
+            "https://user:pass@www.youtube.com/api/timedtext",
+            "https://www.youtube.com:8443/api/timedtext",
+            "http://www.youtube.com/api/timedtext",
+        ):
+            with self.subTest(base_url=base_url):
+                response = json.dumps({
+                    "captions": {"playerCaptionsTracklistRenderer": {"captionTracks": [{
+                        "baseUrl": base_url,
+                        "languageCode": "en",
+                    }]}}
+                })
+                html = f'<html><script>var ytInitialPlayerResponse = {response};</script></html>'
+                mock_response = mock.MagicMock()
+                mock_response.read.return_value = html.encode()
+                mock_response.__enter__.return_value = mock_response
+                open_mock = mock.Mock(return_value=mock_response)
+                with mock.patch("lib.youtube_yt.urllib.request.urlopen", open_mock):
+                    self.assertIsNone(youtube_yt._fetch_transcript_direct("hostile"))
+                self.assertEqual(1, open_mock.call_count)
+
     def test_direct_vtt_feeds_into_clean_vtt(self):
         """VTT from direct fetch produces clean plaintext via _clean_vtt()."""
         cleaned = youtube_yt._clean_vtt(self._SAMPLE_VTT)

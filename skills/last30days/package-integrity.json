@@ -4,8 +4,8 @@
   "package_version": "3.27.2+hardened.1",
   "files": [
     {"path": "SKILL.md", "size": 31933, "sha256": "d351a3657fcdcbbdd6af6e058ff9a7075e51309d523ef20340c92228e44da75c"},
-    {"path": "scripts/engine-integrity.json", "size": 399, "sha256": "28b7a340593f4dcde5ea7fc77128d38014ae6c0c17a78ea12f537b35f18be33e"},
-    {"path": "scripts/last30days.py", "size": 189614, "sha256": "4b191d088d83f8cb35ea5976f67d7174808e9d3168797a91fe0fcdf7932d25e1"},
+    {"path": "scripts/engine-integrity.json", "size": 399, "sha256": "100e718ad2ecdb89a42ee63e96976116da28517795763cd8bff813634fc0e1a4"},
+    {"path": "scripts/last30days.py", "size": 189616, "sha256": "21eb93cac6c823129f832b8acc7ec87ce8d262efdb4bd4c43c49c294f158d143"},
     {"path": "scripts/package_integrity.py", "size": 8205, "sha256": "e7a616e924c4f40006072df73b785f1b277d7338383d5a9eb34ff7a8d02e61ac"},
     {"path": "references/agent-mode.md", "size": 2294, "sha256": "72fd3e5772c9113a936084bbdf13e503c52231f46bfbababef90adc4e1e8118b"},
     {"path": "references/category-peers.md", "size": 3485, "sha256": "a973e60f03ed242e769767b24c85c6a1fe412bc853796ada75f25eab68152bd0"},

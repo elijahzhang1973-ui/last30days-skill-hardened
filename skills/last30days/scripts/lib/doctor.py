@@ -1954,7 +1954,9 @@ def _http_ok(
                 if reason:
                     return False, f"HTTP {code} but blocked: {reason}"
             return _verdict(code)
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
+        from . import http
+
+        with http.open_request(req, timeout=timeout) as resp:
             code = getattr(resp, "status", 200) or 200
             if body_check is not None and code < 300:
                 text = resp.read().decode("utf-8", errors="replace")

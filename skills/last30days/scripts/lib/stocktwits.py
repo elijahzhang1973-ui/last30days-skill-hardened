@@ -15,10 +15,7 @@ API: public, no auth. Symbol stream + symbol search endpoints. Unauthenticated
 quota is ~200 requests/hour and is rate-limited per IP — keep pagination small.
 Respect StockTwits' API terms if this is ever shipped beyond personal use.
 
-NOTE: uses raw urllib rather than the shared `from . import http` helper.
-Every call is wrapped in try/except and degrades to a partial/empty result, but
-switching to the shared helper (429 Retry-After, retry budget, backoff) is a
-known follow-up to match siblings like hackernews.py.
+Requests use the shared credential-safe redirect transport.
 """
 
 from __future__ import annotations
@@ -31,6 +28,8 @@ import time
 import urllib.parse
 import urllib.request
 from typing import Any
+
+from . import http
 
 _UA = "Mozilla/5.0 (last30days stocktwits source)"
 _STREAM_URL = "https://api.stocktwits.com/api/2/streams/symbol/{symbol}.json"
@@ -78,7 +77,7 @@ def _log(msg: str) -> None:
 
 def _get_json(url: str, timeout: int = 20) -> dict[str, Any]:
     req = urllib.request.Request(url, headers={"User-Agent": _UA})
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
+    with http.open_request(req, timeout=timeout) as resp:
         return json.load(resp)
 
 

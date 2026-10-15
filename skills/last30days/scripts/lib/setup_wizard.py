@@ -746,7 +746,7 @@ def write_api_key(
         return True
 
     except OSError as exc:
-        logger.error("Failed to write API key to %s: %s", env_path, exc)
+        logger.error("Configuration write failed for %s: %s", env_path, exc)
         return False
 
 
@@ -1131,14 +1131,29 @@ def poll_device_auth(
 _PROFILE_FETCH_ATTEMPTS = 3
 _PROFILE_FETCH_RETRY_SLEEP_S = 1.0
 _PROFILE_ERROR_BODY_LIMIT = 200
+_PROFILE_SECRET_FIELD_RE = re.compile(
+    r"(?:^|[_-])(api[_-]?key|authorization|cookie|credential|password|secret|token)(?:$|[_-])",
+    re.IGNORECASE,
+)
+
+
+def _redact_profile_error_value(value: Any, *, field: str = "") -> Any:
+    """Redact secret-shaped fields in an untrusted profile error payload."""
+    normalized = re.sub(r"(?<!^)(?=[A-Z])", "_", str(field)).lower()
+    if field and _PROFILE_SECRET_FIELD_RE.search(normalized):
+        return "<redacted>"
+    if isinstance(value, dict):
+        return {
+            str(key): _redact_profile_error_value(child, field=str(key))
+            for key, child in value.items()
+        }
+    if isinstance(value, list):
+        return [_redact_profile_error_value(child) for child in value]
+    return value
 
 
 def _http_error_detail(exc: HTTPError, *, body_limit: int = _PROFILE_ERROR_BODY_LIMIT) -> str:
-    """Build a diagnosable HTTPError string including a truncated body.
-
-    The body is capped and never treated as a secret source of truth; callers
-    still must not log bearer tokens. Used so a 5xx is not a black box.
-    """
+    """Build a bounded diagnostic without echoing untrusted secret values."""
     base = f"HTTP Error {exc.code}: {getattr(exc, 'reason', '') or ''}".rstrip(": ")
     try:
         raw = exc.read() or b""
@@ -1146,12 +1161,17 @@ def _http_error_detail(exc: HTTPError, *, body_limit: int = _PROFILE_ERROR_BODY_
         return base
     if not raw:
         return base
-    text = raw.decode("utf-8", errors="replace").strip()
-    if not text:
+    raw_text = raw.decode("utf-8", errors="replace").strip()
+    if not raw_text:
         return base
+    try:
+        payload = _redact_profile_error_value(json.loads(raw_text))
+    except (json.JSONDecodeError, TypeError, ValueError):
+        return f"{base} body=<non-json omitted>"
+    text = json.dumps(payload, sort_keys=True, separators=(",", ":"))
     if len(text) > body_limit:
         text = text[:body_limit] + "…"
-    return f"{base} body={text!r}"
+    return f"{base} body={text}"
 
 
 def fetch_api_key(access_token: str) -> Dict[str, Any]:
@@ -1201,7 +1221,7 @@ def fetch_api_key(access_token: str) -> Dict[str, Any]:
                     time.sleep(_PROFILE_FETCH_RETRY_SLEEP_S)
                     continue
                 return last_upstream
-            logger.warning("Failed to fetch API key: %s", detail)
+            logger.warning("Device auth profile request failed: %s", detail)
             return {
                 "ok": False,
                 "reason": "http_error",
@@ -1209,8 +1229,9 @@ def fetch_api_key(access_token: str) -> Dict[str, Any]:
                 "detail": detail,
             }
         except (URLError, OSError) as exc:
-            logger.warning("Failed to fetch API key: %s", exc)
-            return {"ok": False, "reason": "request_failed", "detail": str(exc)}
+            detail = f"{type(exc).__name__}: request failed"
+            logger.warning("Device auth profile request failed: %s", detail)
+            return {"ok": False, "reason": "request_failed", "detail": detail}
 
     if data is None:
         # Defensive: loop exited without success or an explicit return.
@@ -1227,9 +1248,7 @@ def fetch_api_key(access_token: str) -> Dict[str, Any]:
         # the response's FIELD NAMES only (never values — the body may contain a
         # key under a different field) so the already-registered response shape
         # can be handled in a follow-up (see plan OQ1).
-        logger.warning(
-            "Device auth /profile returned no api_key (fields: %s)", sorted(data.keys())
-        )
+        logger.warning("Device auth profile omitted the expected field (fields: %s)", sorted(data.keys()))
         return {"ok": False, "reason": "no_api_key"}
     return {"ok": True, "api_key": api_key}
 
