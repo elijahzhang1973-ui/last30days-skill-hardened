@@ -4,9 +4,11 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -14,11 +16,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
+from urllib.request import Request
 
 sys.path.insert(0, str(Path(__file__).parent))
 
 from lib import env as envlib
+from lib import http
 from lib import schema
 from lib.providers import GEMINI_FLASH_LITE
 
@@ -45,7 +48,8 @@ def _load_default_topics() -> list[tuple[str, str]]:
 DEFAULT_TOPICS = _load_default_topics()
 DEFAULT_SEARCH = ""
 DEFAULT_JUDGE_MODEL = GEMINI_FLASH_LITE
-GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+_GEMINI_MODEL_RE = re.compile(r"^[A-Za-z0-9._-]+$")
 EVAL_CREDENTIAL_ENV_KEYS = (
     "GOOGLE_API_KEY",
     "GEMINI_API_KEY",
@@ -213,18 +217,20 @@ def extract_gemini_text(payload: dict[str, Any]) -> str:
 
 
 def call_gemini_judge(api_key: str, model: str, prompt: str) -> dict[str, Any]:
+    if not _GEMINI_MODEL_RE.fullmatch(model):
+        raise ValueError("Gemini model must contain only letters, digits, dot, underscore, or hyphen.")
     body = {
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {"temperature": 0, "responseMimeType": "application/json"},
     }
     request = Request(
-        GEMINI_API_URL.format(model=model, api_key=api_key),
+        GEMINI_API_URL.format(model=model),
         data=json.dumps(body).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
+        headers={"Content-Type": "application/json", "x-goog-api-key": api_key},
         method="POST",
     )
     try:
-        with urlopen(request, timeout=120) as response:
+        with http.open_request(request, timeout=120) as response:
             payload = json.loads(response.read().decode("utf-8"))
     except HTTPError as exc:
         detail = exc.read().decode("utf-8", errors="replace")
@@ -282,30 +288,25 @@ def get_judgments(
 ) -> dict[str, int]:
     cache_file = output_dir / "judgments" / f"{slug}.json"
     cache_file.parent.mkdir(parents=True, exist_ok=True)
+    prompt = build_judge_prompt(topic, query_type, items)
+    input_sha256 = hashlib.sha256(json.dumps([judge_model, prompt]).encode("utf-8")).hexdigest()
     stale_cache = False
     if cache_file.exists():
         payload = json.loads(cache_file.read_text())
-        # The cache key is the topic slug alone, but judgments are model-
-        # specific. Only reuse the cache when it was produced by the same judge
-        # model; otherwise re-judge, so a --judge-model change cannot return
-        # stale grades that silently skew precision@k / nDCG. Caches written
-        # before judge_model was recorded miss here and get refreshed once.
-        if payload.get("judge_model") == judge_model:
+        if payload.get("input_sha256") == input_sha256:
             return {row["id"]: int(row["grade"]) for row in payload.get("judgments") or []}
         stale_cache = True
     if not gemini_api_key or not items:
-        if stale_cache:
-            # Discarded a different-model cache but can't re-judge. Returning {}
-            # scores every item as ungraded (zero precision@k / nDCG); say so
-            # rather than letting the run report silently wrong numbers.
+        if stale_cache and not gemini_api_key:
             sys.stderr.write(
-                f"[Eval] Cached judgments for {slug!r} were graded by a different "
-                f"judge model and no Gemini API key is set to re-judge; returning "
+                f"[Eval] Cached judgments for {slug!r} have different or unverified "
+                f"judge inputs/model and no Gemini API key is set to re-judge; returning "
                 f"no grades (metrics for this topic will be zero).\n"
             )
         return {}
-    payload = call_gemini_judge(gemini_api_key, judge_model, build_judge_prompt(topic, query_type, items))
+    payload = call_gemini_judge(gemini_api_key, judge_model, prompt)
     payload["judge_model"] = judge_model
+    payload["input_sha256"] = input_sha256
     cache_file.write_text(json.dumps(payload, indent=2))
     return {row["id"]: int(row["grade"]) for row in payload.get("judgments") or []}
 

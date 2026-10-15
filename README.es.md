@@ -2,8 +2,6 @@
 
 [English](README.md) | [Français](README.fr.md) | [Deutsch](README.de.md) | Español | [Português (Brasil)](README.pt-BR.md) | [日本語](README.ja.md) | [简体中文](README.zh-CN.md)
 
-> **Distribución reforzada no oficial.** Basada en [`mvanhorn/last30days-skill` v3.21.1](https://github.com/mvanhorn/last30days-skill/releases/tag/v3.21.1). No es una versión oficial de mvanhorn; conserva el copyright y la licencia MIT del proyecto original.
-
 <p align="center">
   <img src="media/pr-assets/last30days-ad.gif" width="720" alt="last30days - an AI agent-led search engine that searches people, not editors" />
 </p>
@@ -15,6 +13,10 @@
   <br/>
   <a href="https://trendshift.io/repositories/21997" target="_blank">
     <img src="https://trendshift.io/api/badge/repositories/21997" alt="mvanhorn/last30days-skill | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/>
+  </a>
+  <br/>
+  <a href="https://github.com/mvanhorn/last30days-skill/actions/workflows/validate.yml">
+    <img src="https://github.com/mvanhorn/last30days-skill/actions/workflows/validate.yml/badge.svg" alt="Validate status" />
   </a>
 </p>
 
@@ -40,7 +42,7 @@ Cero configuración. Reddit, HN, Polymarket y GitHub funcionan de inmediato. Eje
 
 ---
 
-Los votos positivos de Reddit. Los likes de X. Las transcripciones de YouTube. La interacción en TikTok. Los precios de Polymarket como señal de las expectativas de los operadores. Millones de personas señalan cada día con su atención y su cartera. /last30days lo busca todo en paralelo y lo sintetiza en un único informe.
+Los votos positivos de Reddit. Los likes de X. Las transcripciones de YouTube. La interacción en TikTok. Las cuotas de Polymarket, respaldadas por dinero real y por información privilegiada. Eso son millones de personas votando cada día con su atención y su cartera. /last30days lo busca todo en paralelo, lo puntúa según aquello con lo que la gente interactúa de verdad, y un agente de IA hace de juez para sintetizarlo en un único informe.
 
 Google agrega redacciones. /last30days busca personas.
 
@@ -72,12 +74,13 @@ Si te vas a reunir con un CEO, ¿te has leído todos sus tuits y todas sus trans
 | **TikTok** | El creador que llega a 3,6 millones de personas con una lectura que nunca encontrarás en Google. |
 | **Instagram Reels** | La mirada de los influencers, con transcripción de lo que dicen. La señal de la cultura visual. |
 | **Hacker News** | El consenso de los desarrolladores. 825 puntos, 899 comentarios. Donde la gente técnica discute de verdad. |
-| **Polymarket** | Probabilidades implícitas y movimientos del mercado: expectativas de operadores, no confianza factual. |
+| **Polymarket** | No son opiniones. Son cuotas. Respaldadas por dinero real. 96 % de probabilidad en ventas de un álbum. 4 % en una adquisición. |
 | **GitHub** | Para personas: ritmo de PR, mejores repositorios por estrellas, notas de versión. Para temas: issues y discusiones. |
 | **Digg** | Grupos de noticias seleccionados del ranking AI 1000 de Digg (unas 1000 cuentas de IA con mucha señal en X), con citas atribuibles integradas y sin necesidad de autenticarte en X. Se activa solo cuando `digg-pp-cli` está en el PATH. |
 | **arXiv** | Los artículos científicos que hay detrás del ruido. Investigación nueva dentro de la ventana, gratis y sin clave de API. Se activa solo cuando `arxiv-pp-cli` está en el PATH (la configuración inicial lo instala). |
 | **Techmeme** | La capa editorial de la actualidad tecnológica, acotada a tu ventana de 30 días. Gratis y sin clave de API. Se activa solo cuando `techmeme-pp-cli` está en el PATH (la configuración inicial lo instala). |
 | **LinkedIn** | La señal profesional. Publicaciones y artículos, con los artículos ponderados como señal fuerte. |
+| **Meta Ads** | Lo que una marca paga por decir. Creatividades publicitarias de Meta lanzadas este mes, con texto, códigos promocionales y transcripciones. |
 | **StockTwits** | El sentimiento de los traders. Se activa automáticamente cuando tu tema es un ticker o una criptomoneda. |
 | **Threads** | La capa de texto posterior a Twitter. Conversaciones de creadores y marcas. |
 | **Pinterest** | Descubrimiento visual. Pines, guardados y comentarios sobre productos e ideas. |
@@ -88,7 +91,7 @@ Si te vas a reunir con un CEO, ¿te has leído todos sus tuits y todas sus trans
 
 La comunidad no para de sumar fuentes. Truth Social y otras fuentes de nicho ya están en el motor, y vienen más.
 
-Un hilo de Reddit con 1.500 votos positivos es una señal más fuerte que una entrada de blog que no leyó nadie. Un TikTok con 3,6 millones de visualizaciones dice más sobre lo que es culturalmente relevante que cualquier nota de prensa. Polymarket añade una visión distinta de lo que esperan los operadores, sujeta a la calidad del mercado y a sus reglas de resolución.
+Un hilo de Reddit con 1.500 votos positivos es una señal más fuerte que una entrada de blog que no leyó nadie. Un TikTok con 3,6 millones de visualizaciones dice más sobre lo que es culturalmente relevante que cualquier nota de prensa. Unas cuotas de Polymarket respaldadas por 66.000 dólares de volumen son más difíciles de rebatir que la corazonada de un tertuliano.
 
 La síntesis ordena según aquello con lo que la gente real ha interactuado de verdad. Relevancia social, no relevancia SEO.
 
@@ -162,7 +165,7 @@ Los cimientos de la v3 siguen todos aquí: el cerebro previo a la investigación
 | **Grok** (xAI Build CLI) | `grok plugin marketplace add mvanhorn/last30days-skill` y después `grok plugin install last30days` | `grok plugin update last30days` |
 | **Codex, Cursor, Copilot, Gemini CLI, o cualquiera de los 50+ hosts de [Agent Skills](https://agentskills.io)** | `npx skills add mvanhorn/last30days-skill -g` | `npx skills update last30days -g` |
 | **claude.ai** (web) | [Descarga `last30days.skill`](https://github.com/mvanhorn/last30days-skill/releases/latest/download/last30days.skill) y súbelo desde claude.ai > Customize > Skills > + > Create skill > Upload a skill | Volver a descargar y volver a subir |
-| **Claude Desktop** | [Descarga el `.mcpb` de tu plataforma](https://github.com/mvanhorn/last30days-skill/releases/latest) y arrástralo a Settings > Extensions | Volver a descargar y arrastrar el nuevo paquete |
+| **Claude Desktop** | Esta versión solo admite el `.mcpb` para Linux x86_64; descárgalo de la versión publicada y arrástralo a Settings > Extensions | Volver a descargar y arrastrar el nuevo paquete |
 | **OpenClaw** | `clawhub install last30days-official` | `clawhub update last30days-official` |
 
 ### Claude Code (recomendado)
@@ -178,6 +181,10 @@ Si prefieres usar la vía de instalación de Agent Skills en Claude Code, tambi�
 ```
 npx skills add mvanhorn/last30days-skill -g -a claude-code
 ```
+
+### Enlace de prueba rápida
+
+[Prueba la skill Last30Days Research en Telegram o WhatsApp](https://app.clawmama.run/skills/2ne05f/hermes?utm_source=github&utm_medium=issue&utm_campaign=skill_outreach_mvanhorn_last30days_skill)
 
 El plugin nativo y la instalación con `npx skills` pueden convivir. Ojo: Claude Code no deduplica entre métodos de instalación. Si tienes activos a la vez el plugin del marketplace y la copia de `npx skills`, `/last30days` aparecerá dos veces. Usa un solo método de instalación por máquina.
 
@@ -196,7 +203,7 @@ grok plugin marketplace add mvanhorn/last30days-skill
 grok plugin install last30days
 ```
 
-Añade `--trust` para saltarte la confirmación de instalación. Actualiza con `grok plugin update last30days`. Grok también lee los manifiestos de Claude Code por compatibilidad; el par nativo `.grok-plugin/` es la vía principal, y es a lo que apunta una entrada oficial en el [marketplace de xAI](https://github.com/xai-org/plugin-marketplace). `npx skills add` sigue siendo una alternativa válida para cualquier host.
+Añade `--trust` para saltarte la confirmación de instalación. Actualiza con `grok plugin update last30days`. Grok también lee los manifiestos de Claude Code por compatibilidad; el par nativo `.grok-plugin/` es la vía principal, y es a lo que apunta una entrada oficial en el [marketplace de xAI](https://github.com/xai-org/plugin-marketplace). `npx skills add` sigue siendo una alternativa válida para cualquier host. En Grok Bot, X funciona sin configurar nada a través de las herramientas de X integradas del bot, luego el conector de X del bot, con la API oficial de X (`X_BEARER_TOKEN`) como respaldo.
 
 ### Codex, Cursor, Copilot, Gemini CLI y otros hosts de Agent Skills
 
@@ -208,7 +215,7 @@ npx skills add mvanhorn/last30days-skill -g
 
 El flag `-g` (global) instala en tu directorio de usuario, de modo que la skill queda disponible en todos los proyectos. Sin `-g`, `npx skills` instala solo en el proyecto, dentro de `./.skills/` (y se versiona con el repositorio). Para una herramienta que sirve para investigar el mundo entero, lo que quieres es la instalación global.
 
-Codex de escritorio y otros hosts que trabajan a nivel de carpeta funcionan tanto en carpetas normales como en repositorios Git. Antes de la primera investigación, pídele al agente anfitrión que ejecute el `scripts/last30days.py --preflight` incluido desde el directorio de la skill cargada; en un clon del código fuente, el comando equivalente es `python3 skills/last30days/scripts/last30days.py --preflight`. Te muestra de dónde sale la configuración, qué cookies del navegador se leerían, qué archivos se escribirían, qué comandos opcionales hay y qué configuración de proyecto se ignora, todo ello sin leer cookies, sin escribir archivos y sin lanzar ninguna investigación.
+Codex de escritorio y otros hosts que trabajan a nivel de carpeta funcionan tanto en carpetas normales como en repositorios Git. Para inspeccionar qué leería y escribiría una ejecución sin lanzar investigación, ejecuta el `scripts/last30days.py --preflight` incluido desde el directorio de la skill cargada; en un clon del código fuente, el comando equivalente es `python3 skills/last30days/scripts/last30days.py --preflight`. Te muestra de dónde sale la configuración, qué cookies del navegador se leerían, qué archivos se escribirían, qué comandos opcionales hay y qué configuración de proyecto se ignora, todo ello sin leer cookies, sin escribir archivos y sin lanzar ninguna investigación. La configuración del primer uso no lo exige.
 
 Por defecto se instala para el host que detecte `npx skills`. Para apuntar a uno concreto (o a varios):
 
@@ -245,19 +252,17 @@ Activa antes «Code execution and file creation» en Capabilities: sin eso, las 
 
 Claude Desktop instala `/last30days` como servidor MCP mediante un paquete `.mcpb` (un paquete de Model Context Protocol de un solo clic).
 
-1. Entra en la [última versión publicada](https://github.com/mvanhorn/last30days-skill/releases/latest) y descarga el `.mcpb` de tu plataforma:
-   - macOS Apple Silicon: `last30days-pp-mcp-darwin-arm64.mcpb`
-   - macOS Intel: `last30days-pp-mcp-darwin-amd64.mcpb`
+1. Entra en la última versión publicada y descarga el objetivo compatible:
    - Linux x86_64: `last30days-pp-mcp-linux-amd64.mcpb`
 2. Abre Claude Desktop, ve a Settings > Extensions y arrastra el archivo ahí.
 3. Cuando te las pida, pega las claves de API de las fuentes que quieras activar. Todos los campos son opcionales: si los saltas todos, el motor se queda en modo solo web. Las claves se guardan en el llavero de tu sistema operativo.
 4. Reinicia Claude Desktop. Pídele a Claude que «investigue a Peter Steinberger», o cualquier otro tema, y llamará a la herramienta `research`.
 
-**Requisito del anfitrión:** Python 3.12+ en el PATH. El paquete incluye el código del motor, pero usa tu intérprete de Python local. En Windows, instálalo desde [python.org](https://www.python.org/downloads/); macOS y la mayoría de distribuciones de Linux ya traen una versión compatible.
+**Requisito del anfitrión:** Python 3.12+ en el PATH. El paquete incluye el código del motor, pero usa tu intérprete de Python local. Este requisito se aplica al objetivo MCPB de Linux compatible indicado arriba.
 
 **Las claves no se comparten con la skill de Claude Code.** Claude Desktop y Claude Code mantienen almacenes de credenciales separados a propósito. Si ya configuraste `~/.config/last30days/.env` para la skill de Claude Code, aquí tendrás que introducir esas mismas claves una vez.
 
-La compatibilidad con Windows queda aplazada hasta resolver los puntos de entrada por plataforma del manifiesto; el seguimiento se hace en una incidencia aparte.
+**Windows y macOS quedan fuera del alcance de soporte de la versión `v3.27.2-hardened.1`.** No se compila ni publica ningún MCPB para Windows o macOS, y el paquete genérico Skill/Python solo tiene soporte de versión en Linux para esta versión. Los archivos fuente que mencionan otras plataformas no establecen soporte de versión; consulta [PLATFORM_SUPPORT.md](PLATFORM_SUPPORT.md).
 
 ### OpenClaw
 
@@ -291,7 +296,7 @@ Estas plataformas no tienen ninguna relación entre sí. X no sabe lo que piensa
 |---------|---------------|------|
 | Reddit (con comentarios) + HN + Polymarket + GitHub + StockTwits | Nada | Gratis |
 | arXiv + Techmeme | CLI gratuitas, instaladas automáticamente por la configuración inicial | Gratis |
-| X / Twitter | Inicia sesión en x.com en cualquier navegador, o define `XQUIK_API_KEY` / `XAI_API_KEY` | Las cookies del navegador son gratis; las claves dependen del proveedor |
+| X / Twitter | Define `X_BEARER_TOKEN` para la API oficial de X (posts recientes, aproximadamente la última semana, salvo que tu proyecto de desarrollador de X tenga acceso al archivo completo; es un respaldo en Grok Bot tras las herramientas de X integradas del bot y opcional en otros hosts con `LAST30DAYS_X_BACKEND=xapi`), o inicia sesión en x.com en cualquier navegador, o define `XQUIK_API_KEY` / `XAI_API_KEY` | Los créditos de la API de X salen de tu proyecto de desarrollador de X; las cookies del navegador son gratis; las demás claves dependen del proveedor |
 | YouTube | `brew install yt-dlp` | Gratis |
 | Bluesky | Una contraseña de aplicación de bsky.app | Gratis |
 | TikTok + Instagram + Threads + Pinterest + LinkedIn + comentarios de YouTube | Una clave de ScrapeCreators | 10.000 llamadas gratis y luego pago por uso |
@@ -326,7 +331,7 @@ Consulta [CONFIGURATION.md](CONFIGURATION.md) para ver la matriz completa de cla
 
 Dos cosas que seguramente querrás saber desde el primer día:
 
-**Dónde se guardan los archivos de investigación.** `LAST30DAYS_MEMORY_DIR` apunta por defecto a `~/Documents/Last30Days/` (en Windows: `C:\Users\<you>\Documents\Last30Days\`). Puedes cambiarlo definiendo esa variable de entorno en tu shell con la ruta que quieras, o con `--save-dir <path>` en una ejecución concreta. Usa `--output <file>` cuando necesites el resultado renderizado en una ruta exacta, con el formato que elijas en `--emit`. Usa `--save-suffix=<name>` para mantener separadas varias variantes del mismo tema (por cliente, por ejemplo). Cada ejecución con `--save-dir` genera `<slug>-raw[-suffix].md`. Ejecuta `python3 skills/last30days/scripts/last30days.py --preflight` para revisar qué se va a escribir antes de lanzar una investigación.
+**Dónde se guardan los archivos de investigación.** `LAST30DAYS_MEMORY_DIR` apunta por defecto a `~/Documents/Last30Days/` (en Windows: `C:\Users\<you>\Documents\Last30Days\`). Puedes cambiarlo definiendo esa variable de entorno en tu shell con la ruta que quieras, o con `--save-dir <path>` en una ejecución concreta. Usa `--output <file>` cuando necesites el resultado renderizado en una ruta exacta, con el formato que elijas en `--emit`. Usa `--save-suffix=<name>` para mantener separadas varias variantes del mismo tema (por cliente, por ejemplo). Cada ejecución con `--save-dir` genera `<slug>-raw[-suffix].md`. Opcionalmente, ejecuta `python3 skills/last30days/scripts/last30days.py --preflight` para revisar qué se va a escribir sin lanzar una investigación.
 
 **Salida estructurada para agentes y flujos de trabajo.** Pídele a `/last30days` JSON legible por máquina y obtendrás el perfil de agente estable y versionado. Para usar el motor directamente en scripts o en desarrollo, ejecuta `python3 skills/last30days/scripts/last30days.py "AI coding agents" --emit=json`; añade `--json-profile=raw` solo si necesitas el volcado interno sin versionar de `Report`. Consulta la [referencia de campos de la exportación JSON y la política de versionado](docs/reference/json-export.md).
 

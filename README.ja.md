@@ -2,8 +2,6 @@
 
 [English](README.md) | [Français](README.fr.md) | [Deutsch](README.de.md) | [Español](README.es.md) | [Português (Brasil)](README.pt-BR.md) | 日本語 | [简体中文](README.zh-CN.md)
 
-> **非公式の強化版です。** [`mvanhorn/last30days-skill` v3.21.1](https://github.com/mvanhorn/last30days-skill/releases/tag/v3.21.1) を基にしています。mvanhorn の公式リリースではありません。上流の著作権表示と MIT ライセンスを維持しています。
-
 <p align="center">
   <img src="media/pr-assets/last30days-ad.gif" width="720" alt="last30days - an AI agent-led search engine that searches people, not editors" />
 </p>
@@ -15,6 +13,10 @@
   <br/>
   <a href="https://trendshift.io/repositories/21997" target="_blank">
     <img src="https://trendshift.io/api/badge/repositories/21997" alt="mvanhorn/last30days-skill | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/>
+  </a>
+  <br/>
+  <a href="https://github.com/mvanhorn/last30days-skill/actions/workflows/validate.yml">
+    <img src="https://github.com/mvanhorn/last30days-skill/actions/workflows/validate.yml/badge.svg" alt="Validate status" />
   </a>
 </p>
 
@@ -40,7 +42,7 @@ npx skills add mvanhorn/last30days-skill -g
 
 ---
 
-Reddit のアップボート。X のいいね。YouTube の文字起こし。TikTok のエンゲージメント。トレーダーの期待を示す Polymarket の価格。何百万人もの人が注意と財布で発するシグナルを /last30days が並行して検索し、1本のブリーフにまとめます。
+Reddit のアップボート。X のいいね。YouTube の文字起こし。TikTok のエンゲージメント。実際のお金とインサイダー情報に裏打ちされた Polymarket のオッズ。つまり、毎日何百万人もの人が自分の注意と財布で投票しているということです。/last30days はそのすべてを並行して検索し、実際に人々が反応したかどうかでスコアを付け、AIエージェントが判定役となって1本のブリーフにまとめます。
 
 Google は編集者を束ねます。/last30days は人を検索します。
 
@@ -72,12 +74,13 @@ CEOと会うとして、直近30日間のツイートと YouTube の文字起こ
 | **TikTok** | Google では絶対に見つからない切り口で360万人に届いているクリエイター。 |
 | **Instagram Reels** | 話した内容の文字起こし付きで届く、インフルエンサーの視点。ビジュアル文化のシグナルです。 |
 | **Hacker News** | 開発者の総意。825ポイント、899コメント。技術寄りの人たちが本気で議論している場所です。 |
-| **Polymarket** | 市場が織り込む確率と変化。トレーダーの期待を示しますが、事実の確信度ではありません。 |
+| **Polymarket** | 意見ではなく、オッズ。実際のお金が裏付けています。アルバムの売上に96%、買収に4%といった具合です。 |
 | **GitHub** | 人物について: PRの勢い、スター数の多いリポジトリ、リリースノート。トピックについて: Issue と Discussion。 |
 | **Digg** | Digg の AI 1000 リーダーボード(X 上でシグナルの強いAI関連アカウント約1000件)から集めたストーリークラスター。出典をたどれるインライン引用付きで、X の認証は不要です。`digg-pp-cli` が PATH にあると自動的に有効になります。 |
 | **arXiv** | 話題の裏側にある論文。対象期間に出た新しい研究が、無料・APIキーなしで手に入ります。`arxiv-pp-cli` が PATH にあると自動的に有効になります(初回セットアップでインストールされます)。 |
 | **Techmeme** | テックニュースの編集レイヤーを、対象の30日間に絞って取得します。無料・APIキーなし。`techmeme-pp-cli` が PATH にあると自動的に有効になります(初回セットアップでインストールされます)。 |
 | **LinkedIn** | ビジネス面のシグナル。投稿と記事を拾い、記事は強いシグナルとして重み付けします。 |
+| **Meta Ads** | ブランドが費用を払って発信しているメッセージ。今月配信を開始した Meta 広告のコピー、プロモコード、音声の書き起こしを拾います。 |
 | **StockTwits** | トレーダーの温度感。調べる対象が銘柄コードや暗号資産のときに自動で有効になります。 |
 | **Threads** | Twitter 以後のテキストの層。クリエイターやブランドの会話です。 |
 | **Pinterest** | ビジュアル起点の発見。プロダクトやアイデアに対するピン・保存・コメント。 |
@@ -88,7 +91,7 @@ CEOと会うとして、直近30日間のツイートと YouTube の文字起こ
 
 コミュニティが今も情報源を増やし続けています。Truth Social をはじめとするニッチな情報源もすでにエンジンに入っていて、さらに追加予定です。
 
-1,500アップボートの Reddit スレッドは、誰にも読まれなかったブログ記事よりも強いシグナルです。360万回再生の TikTok は、プレスリリースよりも「今、文化的に何が効いているか」を語ります。Polymarket は市場の質と決済ルールを前提に、トレーダーの現在の期待という別の視点を加えます。
+1,500アップボートの Reddit スレッドは、誰にも読まれなかったブログ記事よりも強いシグナルです。360万回再生の TikTok は、プレスリリースよりも「今、文化的に何が効いているか」を語ります。6.6万ドルの出来高に裏打ちされた Polymarket のオッズは、評論家の当て推量よりも反論しにくいものです。
 
 この統合処理は、実在の人々が実際に反応したかどうかで順位を付けます。SEO上の関連性ではなく、社会的な関連性です。
 
@@ -162,7 +165,7 @@ v3 の土台はすべて健在です。APIコールを1件も投げる前に、�
 | **Grok**(xAI Build CLI) | `grok plugin marketplace add mvanhorn/last30days-skill` のあとに `grok plugin install last30days` | `grok plugin update last30days` |
 | **Codex、Cursor、Copilot、Gemini CLI、その他50以上の [Agent Skills](https://agentskills.io) ホスト** | `npx skills add mvanhorn/last30days-skill -g` | `npx skills update last30days -g` |
 | **claude.ai**(ウェブ) | [`last30days.skill` をダウンロード](https://github.com/mvanhorn/last30days-skill/releases/latest/download/last30days.skill)し、claude.ai > Customize > Skills > + > Create skill > Upload a skill からアップロード | ダウンロードし直してアップロードし直す |
-| **Claude Desktop** | [お使いのプラットフォーム向けの `.mcpb` をダウンロード](https://github.com/mvanhorn/last30days-skill/releases/latest)し、Settings > Extensions にドラッグ | ダウンロードし直して新しいバンドルをドラッグ |
+| **Claude Desktop** | このリリースでは Linux x86_64 向け `.mcpb` のみをサポートします。公開リリースからダウンロードし、Settings > Extensions にドラッグしてください | ダウンロードし直して新しいバンドルをドラッグ |
 | **OpenClaw** | `clawhub install last30days-official` | `clawhub update last30days-official` |
 
 ### Claude Code(推奨)
@@ -178,6 +181,10 @@ Claude Code で Agent Skills 経由のインストールを使いたい場合も
 ```
 npx skills add mvanhorn/last30days-skill -g -a claude-code
 ```
+
+### クイック試用リンク
+
+[Telegram または WhatsApp で Last30Days Research Skill を試す](https://app.clawmama.run/skills/2ne05f/hermes?utm_source=github&utm_medium=issue&utm_campaign=skill_outreach_mvanhorn_last30days_skill)
 
 ネイティブプラグインと `npx skills` でのインストールは共存できます。ただし Claude Code はインストール方法をまたいだ重複排除を行いません。マーケットプレイス版のプラグインと `npx skills` のコピーを両方とも有効にしていると、`/last30days` が2件表示されます。1台につきインストール方法は1つにしてください。
 
@@ -196,7 +203,7 @@ grok plugin marketplace add mvanhorn/last30days-skill
 grok plugin install last30days
 ```
 
-インストール時の確認を省きたい場合は `--trust` を付けてください。更新は `grok plugin update last30days` です。Grok は互換性のために Claude Code のマニフェストも読みますが、第一の経路はネイティブの `.grok-plugin/` のペアで、[xAI のマーケットプレイス](https://github.com/xai-org/plugin-marketplace)への公式掲載もこちらを指しています。`npx skills add` は、どのホストでも使える代替手段として引き続き有効です。
+インストール時の確認を省きたい場合は `--trust` を付けてください。更新は `grok plugin update last30days` です。Grok は互換性のために Claude Code のマニフェストも読みますが、第一の経路はネイティブの `.grok-plugin/` のペアで、[xAI のマーケットプレイス](https://github.com/xai-org/plugin-marketplace)への公式掲載もこちらを指しています。`npx skills add` は、どのホストでも使える代替手段として引き続き有効です。Grok Bot では、X は設定不要でボットの組み込み X ツールを通じて動作し、次にボットの X コネクタ、公式 X API（`X_BEARER_TOKEN`）がバックアップになります。
 
 ### Codex、Cursor、Copilot、Gemini CLI、その他の Agent Skills ホスト
 
@@ -208,7 +215,7 @@ npx skills add mvanhorn/last30days-skill -g
 
 `-g`(グローバル)フラグを付けるとユーザーディレクトリにインストールされ、スキルをすべてのプロジェクトで使えます。`-g` を付けない場合、`npx skills` はプロジェクト内の `./.skills/` にインストールし、リポジトリと一緒にコミットされます。世界中を調べるためのツールなので、通常はグローバルが向いています。
 
-Codex のデスクトップ版など、フォルダ単位で動くホストは、Git リポジトリでも普通のフォルダでも動作します。最初の調査を始める前に、読み込み済みのスキルディレクトリから同梱の `scripts/last30days.py --preflight` を実行するようホストのエージェントに頼んでください。ソースをチェックアウトしている場合、同等のコマンドは `python3 skills/last30days/scripts/last30days.py --preflight` です。設定の取得元、ブラウザのクッキーをどう扱う予定か、どのファイルを書き込む予定か、任意で使えるコマンド、無視されるプロジェクト設定を表示します。クッキーの読み取りもファイルの書き込みも調査の実行もしません。
+Codex のデスクトップ版など、フォルダ単位で動くホストは、Git リポジトリでも普通のフォルダでも動作します。調査を始めずに読み書き予定を確認するには、読み込み済みのスキルディレクトリから同梱の `scripts/last30days.py --preflight` を実行してください。ソースをチェックアウトしている場合、同等のコマンドは `python3 skills/last30days/scripts/last30days.py --preflight` です。設定の取得元、ブラウザのクッキーをどう扱う予定か、どのファイルを書き込む予定か、任意で使えるコマンド、無視されるプロジェクト設定を表示します。クッキーの読み取りもファイルの書き込みも調査の実行もしません。初回セットアップでは必須ではありません。
 
 既定では、`npx skills` が検出したホスト向けにインストールされます。特定のホスト(または複数)を指定するには次のようにします。
 
@@ -245,19 +252,17 @@ npx skills update -g
 
 Claude Desktop では、`.mcpb` バンドル(ワンクリック版の Model Context Protocol パッケージ)を使って `/last30days` を MCP サーバーとしてインストールします。
 
-1. [最新リリース](https://github.com/mvanhorn/last30days-skill/releases/latest)を開き、お使いのプラットフォーム向けの `.mcpb` をダウンロードします:
-   - macOS Apple Silicon: `last30days-pp-mcp-darwin-arm64.mcpb`
-   - macOS Intel: `last30days-pp-mcp-darwin-amd64.mcpb`
+1. 最新リリースを開き、サポート対象をダウンロードします:
    - Linux x86_64: `last30days-pp-mcp-linux-amd64.mcpb`
 2. Claude Desktop を開き、Settings > Extensions に移動して、ファイルをドラッグします。
 3. 求められたら、有効にしたい情報源のAPIキーを貼り付けます。どの項目も任意です。すべて省略した場合、エンジンはウェブのみのモードに切り替わります。キーはOSのキーチェーンに保存されます。
 4. Claude Desktop を再起動します。Claude に「Peter Steinberger について調べて」などと頼めば、`research` ツールが呼び出されます。
 
-**ホスト側の要件:** PATH の通った Python 3.12以上。バンドルにはエンジンのソースが含まれますが、実行にはローカルの Python インタプリタを使います。Windows では [python.org](https://www.python.org/downloads/) からインストールしてください。macOS とたいていの Linux ディストリビューションには、対応するバージョンが最初から入っています。
+**ホスト側の要件:** PATH の通った Python 3.12以上。バンドルにはエンジンのソースが含まれますが、実行にはローカルの Python インタプリタを使います。この要件は、上記のサポート対象 Linux MCPB に適用されます。
 
 **キーは Claude Code のスキルとは共有されません。** Claude Desktop と Claude Code は、設計上それぞれ別に認証情報を保管しています。Claude Code のスキル用にすでに `~/.config/last30days/.env` を設定していても、ここで同じキーをもう一度だけ入力する必要があります。
 
-Windows のサポートは、マニフェストのプラットフォーム別エントリーポイントが整理されるまで見送りとなっており、専用のIssueで追跡しています。
+**Windows と macOS は `v3.27.2-hardened.1` のリリースサポート範囲外です。** Windows または macOS 向け MCPB はビルドも公開もされず、汎用 Skill/Python パッケージはこのバージョンでは Linux のみがリリースサポート対象です。他のプラットフォームに言及するソースファイルはリリースサポートの根拠にはなりません。[PLATFORM_SUPPORT.md](PLATFORM_SUPPORT.md) を参照してください。
 
 ### OpenClaw
 
@@ -290,7 +295,7 @@ Reddit(コメント込み)、Hacker News、Polymarket、GitHub はすぐに使�
 |---------|---------------|------|
 | Reddit(コメント込み)+ HN + Polymarket + GitHub + StockTwits | 不要 | 無料 |
 | arXiv + Techmeme | 無料のCLI。初回セットアップが自動でインストールします | 無料 |
-| X / Twitter | 任意のブラウザで x.com にログインするか、`XQUIK_API_KEY` / `XAI_API_KEY` を設定 | ブラウザのクッキーは無料。キーの料金は提供元によります |
+| X / Twitter | 公式 X API 用に `X_BEARER_TOKEN` を設定（最近の投稿、およそ直近 1 週間分。X 開発者プロジェクトにフルアーカイブ検索のアクセスがある場合を除く。Grok Bot ではボットの組み込み X ツールの次のバックアップ、それ以外のホストでは `LAST30DAYS_X_BACKEND=xapi` でオプトイン）するか、任意のブラウザで x.com にログインするか、`XQUIK_API_KEY` / `XAI_API_KEY` を設定 | X API のクレジットはご自身の X 開発者プロジェクトから消費。ブラウザのクッキーは無料。その他のキーの料金は提供元によります |
 | YouTube | `brew install yt-dlp` | 無料 |
 | Bluesky | bsky.app のアプリパスワード | 無料 |
 | TikTok + Instagram + Threads + Pinterest + LinkedIn + YouTube のコメント | ScrapeCreators のキー | 1万リクエストまで無料、以降は従量課金 |
@@ -325,7 +330,7 @@ skills/last30days/scripts/setup-keychain.sh --delete XAI_API_KEY
 
 初日に知っておくとよいことが2つあります。
 
-**調査ファイルの保存先。** `LAST30DAYS_MEMORY_DIR` の既定値は `~/Documents/Last30Days/` です(Windows では `C:\Users\<you>\Documents\Last30Days\`)。変更したい場合は、シェルでこの環境変数に任意のパスを設定するか、実行ごとに `--save-dir <path>` を指定します。レンダリング結果を特定のパスに出力したいときは `--output <file>` を使い、形式は `--emit` で選びます。同じトピックの複数のバリエーションを分けて残したいときは `--save-suffix=<name>` を使ってください(クライアントごとに分ける場合など)。`--save-dir` を付けた実行では `<slug>-raw[-suffix].md` が生成されます。調査を走らせる前に書き込み予定を確認するには `python3 skills/last30days/scripts/last30days.py --preflight` を実行してください。
+**調査ファイルの保存先。** `LAST30DAYS_MEMORY_DIR` の既定値は `~/Documents/Last30Days/` です(Windows では `C:\Users\<you>\Documents\Last30Days\`)。変更したい場合は、シェルでこの環境変数に任意のパスを設定するか、実行ごとに `--save-dir <path>` を指定します。レンダリング結果を特定のパスに出力したいときは `--output <file>` を使い、形式は `--emit` で選びます。同じトピックの複数のバリエーションを分けて残したいときは `--save-suffix=<name>` を使ってください(クライアントごとに分ける場合など)。`--save-dir` を付けた実行では `<slug>-raw[-suffix].md` が生成されます。調査を走らせずに書き込み予定を確認するには、任意で `python3 skills/last30days/scripts/last30days.py --preflight` を実行してください。
 
 **エージェントやワークフロー向けの構造化出力。** `/last30days` に機械可読なJSONを求めると、安定したバージョン付きのエージェント向けプロファイルが返ります。スクリプトや開発でエンジンを直接使う場合は `python3 skills/last30days/scripts/last30days.py "AI coding agents" --emit=json` を実行してください。バージョン管理されていない内部の `Report` のダンプが必要なときだけ `--json-profile=raw` を追加します。[JSONエクスポートのフィールド一覧とバージョニング方針](docs/reference/json-export.md)も参照してください。
 

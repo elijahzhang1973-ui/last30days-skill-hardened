@@ -1,0 +1,125 @@
+{
+  "schema_version": "last30days-trust-boundaries/v1",
+  "patch_id": "H007",
+  "follow_up_id": "FU-020",
+  "release_gate": "Every boundary must be ENFORCED or explicitly EXCLUDED, map to executable tests, and have no UNKNOWN high-risk state.",
+  "boundaries": [
+    {
+      "id": "TB-001-USER-TOPIC-CLI-ARGV",
+      "data_origin": "user topic",
+      "control_sink": "engine CLI argv",
+      "risk": "HIGH",
+      "disposition": "ENFORCED",
+      "control_files": ["skills/last30days/SKILL.md", "mcp/internal/tools/research.go"],
+      "test_targets": ["tests/test_skill_research_command.py", "mcp/internal/tools/research_test.go"]
+    },
+    {
+      "id": "TB-002-TOPIC-X-QUERY",
+      "data_origin": "user or plan topic",
+      "control_sink": "X provider query grammar",
+      "risk": "HIGH",
+      "disposition": "ENFORCED",
+      "control_files": ["skills/last30days/scripts/lib/grok_x.py"],
+      "test_targets": ["tests/test_grok_x.py", "tests/test_phrase_preservation.py"]
+    },
+    {
+      "id": "TB-003-PLAN-ENGINE",
+      "data_origin": "host or model plan",
+      "control_sink": "source selection and engine flags",
+      "risk": "HIGH",
+      "disposition": "ENFORCED",
+      "control_files": ["skills/last30days/scripts/last30days.py", "skills/last30days/scripts/lib/planner.py"],
+      "test_targets": ["tests/test_law7_host_plan_gate.py", "tests/test_planner_v3.py"]
+    },
+    {
+      "id": "TB-004-TOOL-OUTPUT-CONTROL",
+      "data_origin": "connector or tool response",
+      "control_sink": "subsequent tool selection or invocation",
+      "risk": "HIGH",
+      "disposition": "ENFORCED",
+      "control_files": ["skills/last30days/scripts/lib/x_envelope.py", "skills/last30days/references/grok-bot-x.md"],
+      "test_targets": ["tests/test_x_envelope.py", "tests/test_grok_bot_host_contract.py"]
+    },
+    {
+      "id": "TB-005-WEB-RESULT-HOST-INSTRUCTION",
+      "data_origin": "external web result",
+      "control_sink": "host instructions, tool mode, or execution plan",
+      "risk": "HIGH",
+      "disposition": "EXCLUDED_CODEX_HOST_NATIVE_WEB",
+      "control_files": ["skills/last30days/scripts/lib/env.py", "skills/last30days/references/codex-host.md"],
+      "test_targets": ["tests/test_hardened_codex_web_policy.py", "tests/test_hardened_untrusted_boundary.py"]
+    },
+    {
+      "id": "TB-006-REFERENCE-EXECUTION",
+      "data_origin": "packaged reference Markdown",
+      "control_sink": "agent execution instructions",
+      "risk": "HIGH",
+      "disposition": "ENFORCED",
+      "control_files": ["skills/last30days/package-integrity.json", "skills/last30days/scripts/package_integrity.py"],
+      "test_targets": ["tests/test_package_integrity.py"]
+    },
+    {
+      "id": "TB-007-SSH-DESTINATION-COMMAND",
+      "data_origin": "configured SSH destination and media identifier",
+      "control_sink": "ssh argv and remote shell command",
+      "risk": "HIGH",
+      "disposition": "ENFORCED",
+      "control_files": ["skills/last30days/scripts/lib/youtube_yt.py"],
+      "test_targets": ["tests/test_youtube_yt.py"]
+    },
+    {
+      "id": "TB-008-GROK-TOPIC-PRIVILEGED-TOOL",
+      "data_origin": "user or retrieved topic text",
+      "control_sink": "Grok CLI tool profile and prompt",
+      "risk": "HIGH",
+      "disposition": "ENFORCED",
+      "control_files": ["skills/last30days/scripts/lib/grok_x.py"],
+      "test_targets": ["tests/test_grok_x.py"]
+    },
+    {
+      "id": "TB-009-MCP-INPUT-ENGINE-ARGV",
+      "data_origin": "MCP caller input",
+      "control_sink": "Python engine argv",
+      "risk": "HIGH",
+      "disposition": "ENFORCED_WINDOWS_MCPB_EXCLUDED",
+      "control_files": ["mcp/internal/tools/research.go", "platform-support.json"],
+      "test_targets": ["mcp/internal/tools/research_test.go", "tests/test_hardened_platform_support.py"]
+    },
+    {
+      "id": "TB-010-WEBPAGE-REFERENCE-SELECTION",
+      "data_origin": "external webpage or discovery evidence",
+      "control_sink": "reference and workflow selection",
+      "risk": "HIGH",
+      "disposition": "ENFORCED",
+      "control_files": ["skills/last30days/scripts/lib/discovery_handoff.py", "skills/last30days/scripts/lib/env.py"],
+      "test_targets": ["tests/test_discover_handoff.py", "tests/test_hardened_codex_web_policy.py"]
+    },
+    {
+      "id": "TB-011-ENDPOINT-CREDENTIAL-DESTINATION",
+      "data_origin": "environment or config endpoint override",
+      "control_sink": "credential-bearing network destination",
+      "risk": "HIGH",
+      "disposition": "ENFORCED",
+      "control_files": ["skills/last30days/scripts/lib/providers.py", "skills/last30days/scripts/lib/permission_preflight.py"],
+      "test_targets": ["tests/test_hardened_endpoint_policy.py"]
+    },
+    {
+      "id": "TB-012-REDIRECT-CREDENTIAL-FORWARDING",
+      "data_origin": "remote redirect response",
+      "control_sink": "credential forwarding to redirect target",
+      "risk": "HIGH",
+      "disposition": "ENFORCED",
+      "control_files": ["skills/last30days/scripts/lib/http.py"],
+      "test_targets": ["tests/test_hardened_redirect_security.py", "tests/test_github_redirect_auth.py"]
+    },
+    {
+      "id": "TB-013-COOKIE-CAPABILITY-EXTRACTION",
+      "data_origin": "browser profile, CDP, or sidecar capability",
+      "control_sink": "credential extraction",
+      "risk": "HIGH",
+      "disposition": "ENFORCED",
+      "control_files": ["skills/last30days/scripts/lib/cookie_consent.py"],
+      "test_targets": ["tests/test_hardened_cookie_consent.py", "tests/test_browser_cookie_consent.py"]
+    }
+  ]
+}

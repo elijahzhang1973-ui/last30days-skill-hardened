@@ -281,6 +281,73 @@ def test_explicit_unconfigured_corpus_records_skipped_outcome():
     assert outcome.attempted is False
 
 
+def test_missing_corpus_root_is_unreachable_not_no_results(tmp_path):
+    missing = tmp_path / "missing-corpus"
+
+    report = pipeline.run(
+        topic="model context protocol servers",
+        config={"_CORPUS_DIRS": [str(missing)], "EXCLUDE_SOURCES": ""},
+        depth="quick",
+        requested_sources=["corpus"],
+        mock=True,
+        as_of_date="2026-07-10",
+        external_plan={
+            "intent": "how_to",
+            "freshness_mode": "evergreen_ok",
+            "cluster_mode": "workflow",
+            "source_weights": {"corpus": 1.0},
+            "subqueries": [{
+                "label": "primary",
+                "search_query": "model context protocol servers",
+                "ranking_query": "How do model context protocol servers work?",
+                "sources": ["corpus"],
+            }],
+        },
+    )
+
+    outcome = report.source_status["corpus"]
+    assert outcome.state == health.UNREACHABLE
+    assert outcome.attempted is True
+    assert outcome.items_returned == 0
+    assert "not a readable directory" in (outcome.detail or "")
+
+
+def test_one_missing_corpus_root_marks_mixed_scan_partial(tmp_path):
+    readable = tmp_path / "readable"
+    readable.mkdir()
+    note = readable / "mcp.md"
+    note.write_text("MCP servers expose tools to coding agents.", encoding="utf-8")
+    _set_mtime(note, "2026-07-05T00:00:00")
+    missing = tmp_path / "missing"
+
+    report = pipeline.run(
+        topic="MCP servers",
+        config={"_CORPUS_DIRS": [str(readable), str(missing)], "EXCLUDE_SOURCES": ""},
+        depth="quick",
+        requested_sources=["corpus"],
+        mock=True,
+        as_of_date="2026-07-10",
+        external_plan={
+            "intent": "concept",
+            "freshness_mode": "balanced_recent",
+            "cluster_mode": "none",
+            "source_weights": {"corpus": 1.0},
+            "subqueries": [{
+                "label": "primary",
+                "search_query": "MCP servers",
+                "ranking_query": "MCP servers",
+                "sources": ["corpus"],
+            }],
+        },
+    )
+
+    outcome = report.source_status["corpus"]
+    assert outcome.state == health.PARTIAL
+    assert outcome.attempted is True
+    assert outcome.items_returned == 1
+    assert "not a readable directory" in (outcome.detail or "")
+
+
 def _privacy_report(secret: str = "PRIVATE-CORPUS-SENTINEL") -> schema.Report:
     item = schema.SourceItem(
         item_id="C-private",
@@ -801,14 +868,31 @@ def test_sentinel_injection_cannot_escape_private_block():
     assert lines[-1] == render.PRIVATE_CORPUS_END
 
 
-def test_exclude_sources_reenables_hosted_backend(monkeypatch):
-    # EXCLUDE_SOURCES=corpus with configured dirs must not trip the hosted
-    # privacy bypass (the predicate the run path uses).
-    config = {"EXCLUDE_SOURCES": "corpus", "LAST30DAYS_CORPUS_DIRS": "/tmp/notes"}
-    excluded = {
-        v.strip().lower() for v in str(config.get("EXCLUDE_SOURCES") or "").split(",") if v.strip()
-    }
-    assert "corpus" in excluded
+def test_exclude_sources_reenables_hosted_backend(tmp_path, monkeypatch):
+    notes = tmp_path / "private-notes"
+    notes.mkdir()
+    (notes / "local.md").write_text("Private MCP research notes", encoding="utf-8")
+    config = {"EXCLUDE_SOURCES": "corpus", "LAST30DAYS_CORPUS_DIRS": str(notes)}
+    monkeypatch.setattr(env, "get_config", lambda **_kwargs: config)
+    monkeypatch.setenv("LAST30DAYS_API_KEY", "dummy-hosted-key")
+    monkeypatch.setenv("LAST30DAYS_API_BASE", "https://hosted.example.test")
+    hosted_run = mock.Mock(return_value=0)
+    monkeypatch.setattr("lib.hosted.run_hosted", hosted_run)
+    local_run = mock.Mock(return_value=_privacy_report())
+    monkeypatch.setattr(cli.pipeline, "run", local_run)
+    monkeypatch.setattr(cli.pipeline, "diagnose", lambda *_args, **_kwargs: {"available_sources": ["corpus"]})
+    monkeypatch.setattr(cli.env, "CONFIG_DIR", tmp_path / "config")
+    monkeypatch.setenv("LAST30DAYS_SKIP_PREFLIGHT", "1")
+    monkeypatch.setattr(sys, "argv", [
+        "last30days.py", "MCP servers", "--quick", "--emit=compact", "--save-dir=",
+    ])
+
+    assert cli.main() == 0
+
+    hosted_run.assert_called_once_with(
+        "MCP servers", "quick", emit="compact", save_dir="", save_suffix="",
+    )
+    local_run.assert_not_called()
 
 
 def test_corpus_notes_never_contain_absolute_paths(tmp_path):

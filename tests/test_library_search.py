@@ -496,13 +496,11 @@ def test_independent_fts_indexes_merge_by_reciprocal_rank(tmp_path):
     ]
     connection = mock.MagicMock()
     connection.execute.return_value.fetchall.return_value = brief_rows
-    connection_context = mock.MagicMock()
-    connection_context.__enter__.return_value = connection
     db_path = tmp_path / "library.db"
     db_path.touch()
 
     with mock.patch.object(
-        library_index, "_connect", return_value=connection_context
+        library_index, "_connect", return_value=connection
     ), mock.patch.object(
         library_index,
         "_search_store_sightings",
@@ -510,6 +508,7 @@ def test_independent_fts_indexes_merge_by_reciprocal_rank(tmp_path):
     ):
         merged = library_index.search("match", db_path=db_path, limit=4)
 
+    connection.close.assert_called_once_with()
     assert [match.source_kind for match in merged].count("brief") == 2
     assert [match.source_kind for match in merged].count("store") == 2
     assert merged[0].rank == merged[1].rank

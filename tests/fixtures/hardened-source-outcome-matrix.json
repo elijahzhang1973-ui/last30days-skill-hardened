@@ -1,0 +1,20 @@
+{
+  "schema_version": "last30days-source-outcome-matrix/v1",
+  "sources": [
+    "amazon", "arxiv", "bluesky", "corpus", "digg", "dripstack",
+    "github", "grounding", "hackernews", "instagram", "jobs",
+    "linkedin", "meta_ads", "perplexity", "pinterest", "polymarket",
+    "reddit", "stocktwits", "techmeme", "telegram", "threads",
+    "tiktok", "trustpilot", "truthsocial", "x", "xiaohongshu", "youtube"
+  ],
+  "failure_cases": [
+    {"id": "rate-limit", "status_code": 429, "message": "HTTP 429: Too Many Requests", "expected": "rate-limited"},
+    {"id": "auth-401", "status_code": 401, "message": "HTTP 401: Unauthorized", "expected": "auth-failed"},
+    {"id": "payment", "status_code": 402, "message": "HTTP 402: Payment Required", "expected": "payment-required"},
+    {"id": "permission-403", "status_code": 403, "message": "HTTP 403: Forbidden", "expected": "auth-failed"},
+    {"id": "schema", "status_code": null, "message": "Invalid JSON response", "expected": "schema-drift"},
+    {"id": "unreachable", "status_code": null, "message": "Connection error: reset", "expected": "unreachable"},
+    {"id": "timeout", "status_code": 408, "message": "Request timed out", "expected": "timeout"},
+    {"id": "local-permission", "status_code": null, "message": "Permission denied reading local source", "expected": "error"}
+  ]
+}

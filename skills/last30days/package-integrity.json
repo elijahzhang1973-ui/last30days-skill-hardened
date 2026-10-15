@@ -1,0 +1,27 @@
+{
+  "schema_version": "last30days-package-integrity/v1",
+  "skill_id": "last30days",
+  "package_version": "3.27.2+hardened.1",
+  "files": [
+    {"path": "SKILL.md", "size": 31933, "sha256": "d351a3657fcdcbbdd6af6e058ff9a7075e51309d523ef20340c92228e44da75c"},
+    {"path": "scripts/engine-integrity.json", "size": 399, "sha256": "100e718ad2ecdb89a42ee63e96976116da28517795763cd8bff813634fc0e1a4"},
+    {"path": "scripts/last30days.py", "size": 189616, "sha256": "21eb93cac6c823129f832b8acc7ec87ce8d262efdb4bd4c43c49c294f158d143"},
+    {"path": "scripts/package_integrity.py", "size": 8205, "sha256": "e7a616e924c4f40006072df73b785f1b277d7338383d5a9eb34ff7a8d02e61ac"},
+    {"path": "references/agent-mode.md", "size": 2294, "sha256": "72fd3e5772c9113a936084bbdf13e503c52231f46bfbababef90adc4e1e8118b"},
+    {"path": "references/category-peers.md", "size": 3485, "sha256": "a973e60f03ed242e769767b24c85c6a1fe412bc853796ada75f25eab68152bd0"},
+    {"path": "references/codex-host.md", "size": 1639, "sha256": "b96149f82f3d08342c9d56b7f624bd421c4be7739ff96cc24eef38697410f602"},
+    {"path": "references/comparison.md", "size": 17305, "sha256": "f58f21bd2ccbbcfb93812890606aa60255123ce88918c1c171e6b2397bbfe72c"},
+    {"path": "references/competitors.md", "size": 4151, "sha256": "29feb61c25558e8403cdf5fa255fc20e588ef8d8e4c5a6f138f58c9b4bfef61c"},
+    {"path": "references/discovery.md", "size": 9414, "sha256": "241ad76580f141b6ea166e399bddf49af01f8806609e2a3ed183a688520ff56e"},
+    {"path": "references/followups.md", "size": 8119, "sha256": "e3fac96a65ad776780c839cb2a38867545a1be53a3c5cd66dcc306f0382f88c6"},
+    {"path": "references/grok-bot-x.md", "size": 9196, "sha256": "7d64183c1643f87b0f85ffdfea647e881fb98bf09bf8d8b0e8482bb006a3705b"},
+    {"path": "references/hiring-signals.md", "size": 3677, "sha256": "07e033c4c1eca04110d4ee5d813b8d46215e8e51d459e43fe78875da1a98a046"},
+    {"path": "references/library-queue.md", "size": 3664, "sha256": "afa78974a77896fa6ba3fd8457f116b5ee73252b4f2cf86107edb5bd5afe6b79"},
+    {"path": "references/recommendations.md", "size": 7194, "sha256": "edb9669528bd597a441be456f6d2ffaeab6cb9e9ac68ffd4249ce221a0a04c85"},
+    {"path": "references/research-runbook.md", "size": 74227, "sha256": "49de4cb38c9343bea6d87b237461914946b9a8ae64c4b677ec131351b04f2458"},
+    {"path": "references/runtime.md", "size": 11052, "sha256": "671b2f0eac5d7a7dc8e89610b9186d29797008830ac690db4c276c4082d7766d"},
+    {"path": "references/save-html-brief.md", "size": 15342, "sha256": "76a0a5b2a12d901634f2d2322df6f47c7e17e7748c40e205eef52060b3c4ae14"},
+    {"path": "references/setup-wizard.md", "size": 46435, "sha256": "2472d9aaacc41ab80fa31aa5c6db8931d3e530234451b594cc0d4e8066dfa0de"},
+    {"path": "references/synthesis.md", "size": 26217, "sha256": "1af61dbb2f2156c81165dd55a9d7335171d1824f08b2c99687eaff37c7b4966f"}
+  ]
+}

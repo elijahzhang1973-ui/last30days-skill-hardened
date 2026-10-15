@@ -42,6 +42,7 @@ ALL_KEYS=(
   XIAOHONGSHU_API_BASE
   GITHUB_TOKEN
   BRIGHTDATA_API_KEY
+  X_BEARER_TOKEN
 )
 
 if [[ "${OSTYPE:-}" != darwin* ]]; then
@@ -72,6 +73,7 @@ case "$ACTION" in
   list)
     echo "Stored last30days-* keychain items:"
     for key in "${ALL_KEYS[@]}"; do
+      # Existence checks do not need to decrypt or return the password.
       if security find-generic-password -a "$USER" -s "${PREFIX}${key}" >/dev/null 2>&1; then
         echo "  $key"
       fi
@@ -99,11 +101,12 @@ fi
 
 added=0; skipped=0; replaced=0
 for key in "${TARGETS[@]}"; do
-  exists=0
   if security find-generic-password -a "$USER" -s "${PREFIX}${key}" >/dev/null 2>&1; then
-    exists=1
+    existed=1
+  else
+    existed=0
   fi
-  if [[ "$exists" -eq 1 && "$REPLACE" -eq 0 ]]; then
+  if [[ "$existed" -eq 1 && "$REPLACE" -eq 0 ]]; then
     printf "  %-28s (set, skipping — use --replace to overwrite)\n" "$key"
     skipped=$((skipped + 1))
     continue
@@ -115,12 +118,21 @@ for key in "${TARGETS[@]}"; do
     skipped=$((skipped + 1))
     continue
   fi
-  # With -w at the end and no argv value, security prompts twice. Feed both
-  # answers on stdin so the plaintext never appears in the process listing.
-  printf '%s\n%s\n' "$value" "$value" |
+  # PATCH_ID=H003 FOLLOW_UP_ID=FU-003
+  # `security ... -w "$value"` exposes the plaintext in argv/process listings.
+  # With `-w` at the end and no argv value, macOS security prompts for the
+  # password and its confirmation; provide both through the inherited stdin
+  # pipe and suppress command output.  The secret is never interpolated into
+  # the command string.
+  if ! printf '%s\n%s\n' "$value" "$value" |
     security add-generic-password -U -a "$USER" -s "${PREFIX}${key}" -w \
-      >/dev/null 2>&1
-  if [[ "$exists" -eq 1 ]]; then
+      >/dev/null 2>&1; then
+    echo "  failed: $key (Keychain write error)" >&2
+    unset value
+    skipped=$((skipped + 1))
+    continue
+  fi
+  if [[ "$existed" -eq 1 ]]; then
     replaced=$((replaced + 1))
   else
     added=$((added + 1))

@@ -1,0 +1,171 @@
+{
+  "schema_version": "last30days-semgrep-baseline/v1",
+  "scanner": "semgrep/semgrep:1.167.0",
+  "config": "p/default",
+  "source_run_id": 38670808966,
+  "source_commit": "0ecf9bef7d1cbe1bb6575bfac5af22d64e018c7e",
+  "findings": [
+    {
+      "check_id": "go.lang.security.audit.dangerous-exec-command.dangerous-exec-command",
+      "path": "mcp/internal/engine/run.go",
+      "line": 101,
+      "col": 9,
+      "disposition": "FALSE_POSITIVE",
+      "rationale": "The executable is resolved by resolvePython and preflight-validated; arguments are passed as an argv slice without a shell.",
+      "test_ids": ["mcp/internal/engine/run_test.go::TestRunForwardsExactArgv", "mcp/internal/engine/run_test.go::TestResolvePythonRejectsRelativePATH"]
+    },
+    {
+      "check_id": "javascript.lang.security.detect-insecure-websocket.detect-insecure-websocket",
+      "path": "skills/last30days/scripts/lib/chrome_cdp.py",
+      "line": 169,
+      "col": 54,
+      "disposition": "FALSE_POSITIVE",
+      "rationale": "CDP plaintext WebSocket is permitted only for validated localhost or IP loopback endpoints and remote targets are rejected before network access.",
+      "test_ids": ["tests/test_chrome_cdp.py::test_candidate_endpoints_accepts_loopback_endpoint", "tests/test_chrome_cdp.py::test_read_x_cookies_rejects_remote_cdp_before_any_network_call"]
+    },
+    {
+      "check_id": "javascript.lang.security.detect-insecure-websocket.detect-insecure-websocket",
+      "path": "skills/last30days/scripts/lib/chrome_cdp.py",
+      "line": 195,
+      "col": 21,
+      "disposition": "FALSE_POSITIVE",
+      "rationale": "The connection helper revalidates the URL as a loopback-only ws endpoint before socket creation.",
+      "test_ids": ["tests/test_chrome_cdp.py::test_candidate_endpoints_accepts_loopback_endpoint", "tests/test_chrome_cdp.py::test_read_x_cookies_rejects_remote_cdp_before_any_network_call"]
+    },
+    {
+      "check_id": "javascript.lang.security.detect-insecure-websocket.detect-insecure-websocket",
+      "path": "skills/last30days/scripts/lib/chrome_cdp.py",
+      "line": 454,
+      "col": 40,
+      "disposition": "FALSE_POSITIVE",
+      "rationale": "This is a diagnostic message describing the fail-closed local-only protocol policy, not an unchecked connection.",
+      "test_ids": ["tests/test_chrome_cdp.py::test_read_x_cookies_rejects_wss_without_plaintext_connect", "tests/test_chrome_cdp.py::test_read_x_cookies_rejects_https_base_without_connect"]
+    },
+    {
+      "check_id": "javascript.lang.security.detect-insecure-websocket.detect-insecure-websocket",
+      "path": "skills/last30days/scripts/lib/chrome_cdp.py",
+      "line": 457,
+      "col": 61,
+      "disposition": "FALSE_POSITIVE",
+      "rationale": "This comment documents the loopback Chrome CDP schemes; endpoint validation is enforced before this branch.",
+      "test_ids": ["tests/test_chrome_cdp.py::test_candidate_endpoints_accepts_loopback_endpoint", "tests/test_chrome_cdp.py::test_read_x_cookies_rejects_remote_cdp_before_any_network_call"]
+    },
+    {
+      "check_id": "javascript.lang.security.detect-insecure-websocket.detect-insecure-websocket",
+      "path": "skills/last30days/scripts/lib/chrome_cdp.py",
+      "line": 459,
+      "col": 11,
+      "disposition": "FALSE_POSITIVE",
+      "rationale": "Direct WebSocket configuration has already passed loopback, scheme, userinfo, and port validation.",
+      "test_ids": ["tests/test_chrome_cdp.py::test_candidate_endpoints_accepts_loopback_endpoint", "tests/test_chrome_cdp.py::test_read_x_cookies_rejects_remote_cdp_before_any_network_call"]
+    },
+    {
+      "check_id": "javascript.lang.security.detect-insecure-websocket.detect-insecure-websocket",
+      "path": "skills/last30days/scripts/lib/chrome_cdp.py",
+      "line": 461,
+      "col": 29,
+      "disposition": "FALSE_POSITIVE",
+      "rationale": "The assigned URL remains the same validated loopback-only endpoint and is revalidated inside the connector.",
+      "test_ids": ["tests/test_chrome_cdp.py::test_candidate_endpoints_accepts_loopback_endpoint", "tests/test_chrome_cdp.py::test_page_target_rejects_remote_websocket_url"]
+    },
+    {
+      "check_id": "python.lang.compatibility.python36.python36-compatibility-Popen1",
+      "path": "skills/last30days/scripts/lib/subproc.py",
+      "line": 226,
+      "col": 16,
+      "disposition": "NOT_APPLICABLE",
+      "rationale": "The package manifest requires Python 3.12 or newer; Python 3.6 compatibility is outside the supported runtime contract.",
+      "test_ids": ["tests/test_runtime_preflight_contract.py::RuntimePreflightContractTests::test_candidate_selection_accepts_any_python_3_12_or_newer"]
+    },
+    {
+      "check_id": "python.lang.compatibility.python36.python36-compatibility-Popen2",
+      "path": "skills/last30days/scripts/lib/subproc.py",
+      "line": 226,
+      "col": 16,
+      "disposition": "NOT_APPLICABLE",
+      "rationale": "The package manifest requires Python 3.12 or newer; Python 3.6 compatibility is outside the supported runtime contract.",
+      "test_ids": ["tests/test_runtime_preflight_contract.py::RuntimePreflightContractTests::test_candidate_selection_accepts_any_python_3_12_or_newer"]
+    },
+    {
+      "check_id": "python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query",
+      "path": "skills/last30days/scripts/store.py",
+      "line": 416,
+      "col": 20,
+      "disposition": "FALSE_POSITIVE",
+      "rationale": "The interpolated fragment is a module-owned constant; all runtime values use SQLite placeholders.",
+      "test_ids": ["tests/test_store.py::test_remove_topic_cascades_findings"]
+    },
+    {
+      "check_id": "python.lang.security.audit.formatted-sql-query.formatted-sql-query",
+      "path": "skills/last30days/scripts/store.py",
+      "line": 460,
+      "col": 16,
+      "disposition": "FALSE_POSITIVE",
+      "rationale": "The interpolated fragment is a module-owned constant; all runtime values use SQLite placeholders.",
+      "test_ids": ["tests/test_store.py::test_list_topics"]
+    },
+    {
+      "check_id": "python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query",
+      "path": "skills/last30days/scripts/store.py",
+      "line": 460,
+      "col": 16,
+      "disposition": "FALSE_POSITIVE",
+      "rationale": "The interpolated fragment is a module-owned constant; all runtime values use SQLite placeholders.",
+      "test_ids": ["tests/test_store.py::test_list_topics"]
+    },
+    {
+      "check_id": "python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query",
+      "path": "skills/last30days/scripts/store.py",
+      "line": 532,
+      "col": 9,
+      "disposition": "FALSE_POSITIVE",
+      "rationale": "Dynamic UPDATE columns are rejected unless present in a fixed allowlist and every value remains parameterized.",
+      "test_ids": ["tests/test_store.py::test_update_validates_allowed_columns"]
+    },
+    {
+      "check_id": "python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query",
+      "path": "skills/last30days/scripts/store.py",
+      "line": 587,
+      "col": 16,
+      "disposition": "FALSE_POSITIVE",
+      "rationale": "Only the count-derived placeholder string is formatted; URL values are passed separately as bound parameters.",
+      "test_ids": ["tests/test_store.py::test_store_findings_deduplicates_by_url"]
+    },
+    {
+      "check_id": "python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query",
+      "path": "skills/last30days/scripts/store.py",
+      "line": 699,
+      "col": 16,
+      "disposition": "FALSE_POSITIVE",
+      "rationale": "Only the count-derived placeholder string is formatted; URL values are passed separately as bound parameters.",
+      "test_ids": ["tests/test_store.py::test_store_findings_records_sightings_for_new_findings"]
+    },
+    {
+      "check_id": "python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query",
+      "path": "skills/last30days/scripts/store.py",
+      "line": 853,
+      "col": 16,
+      "disposition": "FALSE_POSITIVE",
+      "rationale": "The interpolated fragment is a module-owned constant; all date and topic values use SQLite placeholders.",
+      "test_ids": ["tests/test_store.py::test_get_new_findings_filters_by_date"]
+    },
+    {
+      "check_id": "python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query",
+      "path": "skills/last30days/scripts/store.py",
+      "line": 899,
+      "col": 9,
+      "disposition": "FALSE_POSITIVE",
+      "rationale": "Dynamic UPDATE columns are rejected unless present in a fixed allowlist and every value remains parameterized.",
+      "test_ids": ["tests/test_store.py::test_update_validates_allowed_columns"]
+    },
+    {
+      "check_id": "python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query",
+      "path": "skills/last30days/scripts/store.py",
+      "line": 1246,
+      "col": 16,
+      "disposition": "FALSE_POSITIVE",
+      "rationale": "The interpolated fragment is a module-owned constant; the time boundary is passed as a bound parameter.",
+      "test_ids": ["tests/test_store.py::test_get_new_findings_filters_by_date"]
+    }
+  ]
+}

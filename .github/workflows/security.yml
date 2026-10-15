@@ -22,7 +22,7 @@ jobs:
           persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
 
       # Block known vulnerabilities in the locked Python dependency graph.
       - name: Run uv audit against locked dependencies
@@ -59,9 +59,9 @@ jobs:
       # verified secrets. Keep output limited to verified findings to avoid noisy
       # unverified annotations.
       - name: Run TruffleHog OSS secret scan
-        uses: trufflesecurity/trufflehog@6f3c981e7b77f235fd2702dd74af25fc4b72bf11 # v3.96.0
+        uses: trufflesecurity/trufflehog@4dd8831c5f12599465d4d45c3c447b4018a34c85 # v3.97.9
         with:
-          version: 3.95.5
+          version: 3.97.1
           extra_args: --results=verified
 
   sast-scan:
@@ -77,13 +77,23 @@ jobs:
         with:
           persist-credentials: false
 
-      # Advisory-first: visibility before enforcement. Semgrep CE scans
-      # the repository with the community rule set (Python, shell, YAML,
-      # JavaScript, Go) to catch source-level security bugs before they
-      # reach production. Set continue-on-error: false once a clean baseline
-      # is confirmed.
+      # The explicit registry ruleset works with telemetry disabled. Do not
+      # use --config=auto here: Semgrep rejects auto config when metrics are
+      # off, and continue-on-error would turn a scan setup failure green.
       - name: Run Semgrep SAST scan
-        continue-on-error: true
         env:
           SEMGREP_SEND_METRICS: off
-        run: semgrep scan --config=auto
+        run: semgrep scan --config=p/default --metrics=off --json --output semgrep-results.json
+
+      - name: Validate audited Semgrep baseline
+        run: >-
+          python3 .github/scripts/validate_semgrep_baseline.py
+          --results semgrep-results.json
+          --baseline .github/semgrep-baseline.json
+
+      - name: Upload Semgrep evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: semgrep-results
+          path: semgrep-results.json
